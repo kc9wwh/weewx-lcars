@@ -1,0 +1,35 @@
+## LCARS skin: archived year page (generated per year via SummaryByYear)
+#import time
+#import weeutil.weeutil
+#set global $page = 'history'
+#set global $P = $year
+#set global $ynum = $year.start.format('%Y')
+#set global $ptitle = $ynum
+#set global $kicker = 'Historical archive · Year ' + $ynum
+#set global $tfmt = '%d.%m.%Y'
+#set global $agg = 86400
+#set global $rain_int = 604800
+#set global $hilo = True
+#set global $trend = 'daily highs and lows, weekly rain'
+#set global $archive_kind = 'year'
+#set global $archive_key = $ynum
+#set global $noaa_url = 'NOAA/NOAA-' + $ynum + '.txt'
+#set global $noaa_title = 'NOAA Annual Summary · ' + $ynum
+#set global $parent_url = ''
+#set global $parent_label = ''
+#set global $show_year_months = True
+#set $_yrs = []
+#try
+#set $_mgr = $year.db_lookup()
+#for $_sp in $weeutil.weeutil.genYearSpans($_mgr.firstGoodStamp(), $_mgr.lastGoodStamp())
+#silent $_yrs.append($time.strftime('%Y', $time.localtime($_sp.start)))
+#end for
+#except
+#set $_yrs = list($SummaryByYear) if $varExists('SummaryByYear') else []
+#end try
+#set $_idx = $_yrs.index($ynum) if $ynum in $_yrs else -1
+#set global $prev_url = ('year-' + $_yrs[$_idx - 1] + '.html') if $_idx > 0 else ''
+#set global $prev_label = $_yrs[$_idx - 1] if $_idx > 0 else ''
+#set global $next_url = ('year-' + $_yrs[$_idx + 1] + '.html') if ($_idx >= 0 and $_idx + 1 < len($_yrs)) else ''
+#set global $next_label = $_yrs[$_idx + 1] if ($_idx >= 0 and $_idx + 1 < len($_yrs)) else ''
+#include "inc/period.inc"
