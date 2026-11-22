@@ -31,7 +31,15 @@ grep -nE '^\s*(WEEWX_ROOT|SKIN_ROOT|HTML_ROOT)' /etc/weewx/weewx.conf
 ls -d /usr/share/weewx/skins/* /etc/weewx/skins/* /usr/lib/weewx/skins/* 2>/dev/null
 ```
 
-If `LCARS` landed somewhere other than your other skins, move it next to them.
+If `LCARS` landed somewhere other than `[StdReport]`'s `SKIN_ROOT`, point `[[LCARSReport]]` at `<WEEWX_ROOT>/skins` in `weewx.conf` so future `weectl extension install` upgrades update the active copy directly:
+
+```
+[[LCARSReport]]
+    skin = LCARS
+    enable = true
+    SKIN_ROOT = /usr/lib/weewx/skins    # match <WEEWX_ROOT>/skins
+    HTML_ROOT = /var/lib/weewx/www/lcars
+```
 
 The WeeWX service runs as its own user (usually `weewx`). Make sure it owns the output folder, and run any manual report as that user, from a directory it can enter:
 
@@ -41,6 +49,23 @@ cd /tmp && sudo -u weewx weectl report run LCARSReport
 ```
 
 Running `weectl report run` with plain `sudo` creates root-owned files, and the service then fails every cycle with `Permission denied`. Check `journalctl -u weewx | grep LCARSReport` if pages stop updating.
+
+### Upgrading
+
+Install the new release zip directly **without** running `weectl extension uninstall` first (uninstalling removes `[[LCARSReport]]` from `weewx.conf`, whereas installing in place preserves your `[[[Extras]]]` overrides):
+
+```
+sudo weectl extension install weewx-lcars-<version>.zip
+sudo systemctl restart weewx
+```
+
+To regenerate the pages immediately without waiting for the next archive cycle:
+
+```
+cd /tmp && sudo -u weewx weectl report run LCARSReport
+```
+
+If your site sits behind a caching proxy or CDN (such as Cloudflare) and styling or script changes do not appear after upgrading, purge the cached `lcars.css` and `lcars.js` files.
 
 ### Make LCARS the front page
 
