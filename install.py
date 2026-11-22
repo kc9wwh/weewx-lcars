@@ -1,8 +1,8 @@
-# Installer for the LCARS skin. Use:  weectl extension install weewx-lcars-0.1.0.zip
+# Installer for the LCARS skin. Use:  weectl extension install weewx-lcars-<version>.zip
 import os
 from weecfg.extension import ExtensionInstaller
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 
 def loader():

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 (2026-11-22)
+
+- Fixed home dashboard and shared frame footer alignment so the bottom-left LCARS elbow meets `.bar-bottom` flush, with the attribution credit aligned cleanly beneath the frame.
+- Updated `README.md` package install instructions to recommend setting `SKIN_ROOT` in `[[LCARSReport]]` and added an `Upgrading` guide.
+
 ## 0.1.0 (2026-11-22)
 
 First release.
