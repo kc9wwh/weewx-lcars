@@ -6,11 +6,10 @@
 </div>
 </div>
 </div>
-#if $fc_on
-<p class="credit frame-credit">Forecast by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0). Generated $current.dateTime.format("%d.%m.%Y %H:%M").</p>
-#else
-<p class="credit frame-credit">Generated $current.dateTime.format("%d.%m.%Y %H:%M").</p>
-#end if
+<footer class="credit frame-credit">
+<span>#if $fc_on#Forecast by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0). #end if#Generated $current.dateTime.format("%d.%m.%Y %H:%M").</span>
+#include "inc/github_link.inc"
+</footer>
 <div class="m-backdrop" data-nav-close hidden></div>
 <section class="m-sheet" id="mobile-sheet" aria-label="All views and controls" hidden>
 <div class="m-sheet-head">

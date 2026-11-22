@@ -78,7 +78,9 @@
 #if $fc_on
 <div class="k-fc" data-forecast="kiosk"></div>
 #end if
-<div class="k-foot">$station.hardware • Station up $station.uptime.long_form<br>WeeWX $station.version#if $fc_on# • Forecast by Open-Meteo.com (CC BY 4.0)#end if#</div>
+<div class="k-foot">$station.hardware • Station up $station.uptime.long_form<br>WeeWX $station.version#if $fc_on# • Forecast by Open-Meteo.com (CC BY 4.0)#end if#
+#include "inc/github_link.inc"
+</div>
 </aside>
 </div>
 
