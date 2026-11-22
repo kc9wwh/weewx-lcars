@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 (2026-11-22)
+
+- Made the clock on the Radar page (`radar.html`) tick live like the Current console and wall display, with the last station reading time shown in the header subtitle.
+
 ## 0.3.0 (2026-11-22)
 
 - Added mobile-first LCARS layout (`<= 860px` / `<= 640px`): slim `WX·01` top elbow bar, compact side-by-side header, 2×2 primary reading grid, single-row wire-connected additional sensors, radar-first sweep ordering with compact side-by-side wind rose and stats, mobile period switcher (`Yesterday`, `Week`, `Month`, `Year`), full-screen NOAA report viewer, and fixed 5-tab bottom navigation dock with slide-up Auxiliary Consoles drawer (`More`).
