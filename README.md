@@ -32,15 +32,15 @@ grep -nE '^\s*(WEEWX_ROOT|SKIN_ROOT|HTML_ROOT)' /etc/weewx/weewx.conf
 ls -d /usr/share/weewx/skins/* /etc/weewx/skins/* /usr/lib/weewx/skins/* 2>/dev/null
 ```
 
-If `LCARS` landed somewhere other than `[StdReport]`'s `SKIN_ROOT`, point `[[LCARSReport]]` at `<WEEWX_ROOT>/skins` in `weewx.conf` so future `weectl extension install` upgrades update the active copy directly:
+If `LCARS` landed somewhere other than `[StdReport]`'s `SKIN_ROOT`, symlink it into `[StdReport]`'s `SKIN_ROOT` (instead of setting a per-report `SKIN_ROOT` under `[[LCARSReport]]`, which WeeWX's `CheetahGenerator` ignores when reading `skin.conf` and `.tmpl` files):
 
 ```
-[[LCARSReport]]
-    skin = LCARS
-    enable = true
-    SKIN_ROOT = /usr/lib/weewx/skins    # match <WEEWX_ROOT>/skins
-    HTML_ROOT = /var/lib/weewx/www/lcars
+# Example when WEEWX_ROOT is /usr/lib/weewx and [StdReport] SKIN_ROOT is /etc/weewx/skins
+sudo rm -rf /etc/weewx/skins/LCARS
+sudo ln -s /usr/lib/weewx/skins/LCARS /etc/weewx/skins/LCARS
 ```
+
+Future `weectl extension install` upgrades will then update `<WEEWX_ROOT>/skins/LCARS` in place and both `CheetahGenerator` and `CopyGenerator` will stay in sync.
 
 The WeeWX service runs as its own user (usually `weewx`). Make sure it owns the output folder, and run any manual report as that user, from a directory it can enter:
 
