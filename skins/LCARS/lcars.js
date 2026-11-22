@@ -277,7 +277,7 @@
         xaxis: { type: 'datetime', labels: { datetimeUTC: false }, axisBorder: { color: '#313749' }, axisTicks: { color: '#313749' } },
         yaxis: { labels: { formatter: function (v) { return v === null || v === undefined ? '' : (Math.abs(v) < 10 && v % 1 ? v.toFixed(2) : Math.round(v * 10) / 10); } } },
         legend: { show: c.series.length > 1, labels: { colors: '#d6d9e4' } },
-        tooltip: { theme: 'dark', x: { format: 'dd MMM HH:mm' }, y: { formatter: function (v) { return v === null ? '–' : v + ' ' + (c.unit || ''); } } },
+        tooltip: { theme: 'dark', x: { format: c.xFormat || 'dd MMM HH:mm' }, y: { formatter: function (v) { return v === null ? '–' : v + ' ' + (c.unit || ''); } } },
         plotOptions: { bar: { columnWidth: '70%' } },
         noData: { text: 'No data' }
       }).render();
@@ -362,6 +362,202 @@
     });
   }
 
+  /* ---------- history matrix & archive ---------- */
+
+  function tempToF(v, unit) {
+    if (unit === 'degree_C') return v * 9 / 5 + 32;
+    if (unit === 'degree_K') return (v - 273.15) * 9 / 5 + 32;
+    return v;
+  }
+
+  function rainToIn(v, unit) {
+    if (unit === 'mm') return v / 25.4;
+    if (unit === 'cm') return v / 2.54;
+    return v;
+  }
+
+  function speedToMph(v, unit) {
+    if (unit === 'km_per_hour' || unit === 'km_per_hour2') return v * 0.621371;
+    if (unit === 'meter_per_second' || unit === 'meter_per_second2') return v * 2.23694;
+    if (unit === 'knot' || unit === 'knot2') return v * 1.15078;
+    return v;
+  }
+
+  function toneFor(metric, unit, v) {
+    if (metric === 'tmax' || metric === 'tavg' || metric === 'tmin') {
+      var f = tempToF(v, unit);
+      if (f < 20) return 't0';
+      if (f < 32) return 't1';
+      if (f < 45) return 't2';
+      if (f < 58) return 't3';
+      if (f < 70) return 't4';
+      if (f < 82) return 't5';
+      if (f < 92) return 't6';
+      return 't7';
+    }
+    if (metric === 'rain') {
+      var r = rainToIn(v, unit);
+      if (r <= 0) return 'r0';
+      if (r < 0.5) return 'r1';
+      if (r < 1.5) return 'r2';
+      if (r < 3.0) return 'r3';
+      if (r < 5.0) return 'r4';
+      return 'r5';
+    }
+    if (metric === 'rdays') {
+      if (v <= 0) return 'r0';
+      if (v <= 3) return 'r1';
+      if (v <= 7) return 'r2';
+      if (v <= 12) return 'r3';
+      if (v <= 18) return 'r4';
+      return 'r5';
+    }
+    if (metric === 'gust') {
+      var g = speedToMph(v, unit);
+      if (g <= 0) return 'w0';
+      if (g < 15) return 'w1';
+      if (g < 25) return 'w2';
+      if (g < 38) return 'w3';
+      if (g < 50) return 'w4';
+      return 'w5';
+    }
+    return '';
+  }
+
+  function historyMatrix() {
+    document.querySelectorAll('td[data-val][data-metric]').forEach(function (td) {
+      var v = num(td.dataset.val);
+      if (v === null) return;
+      var tone = toneFor(td.dataset.metric, td.dataset.unit, v);
+      if (tone) td.dataset.tone = tone;
+    });
+
+    var tablist = document.querySelector('.hist-tabs');
+    if (!tablist) return;
+    var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"][data-matrix-tab]'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('[data-matrix-panel]'));
+    if (!tabs.length || !panels.length) return;
+
+    function activate(id, focusTab) {
+      tabs.forEach(function (t) {
+        var on = t.dataset.matrixTab === id;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.setAttribute('tabindex', on ? '0' : '-1');
+        if (on && focusTab) t.focus();
+      });
+      panels.forEach(function (p) {
+        p.hidden = p.dataset.matrixPanel !== id;
+      });
+    }
+
+    var active = tabs.filter(function (t) { return t.classList.contains('is-active'); })[0] || tabs[0];
+    activate(active.dataset.matrixTab, false);
+
+    tabs.forEach(function (t, idx) {
+      t.addEventListener('click', function () { activate(t.dataset.matrixTab, false); });
+      t.addEventListener('keydown', function (e) {
+        var next = null;
+        if (e.key === 'ArrowRight') next = tabs[(idx + 1) % tabs.length];
+        else if (e.key === 'ArrowLeft') next = tabs[(idx - 1 + tabs.length) % tabs.length];
+        else if (e.key === 'Home') next = tabs[0];
+        else if (e.key === 'End') next = tabs[tabs.length - 1];
+        if (!next) return;
+        e.preventDefault();
+        activate(next.dataset.matrixTab, true);
+      });
+    });
+  }
+
+  var ARCHIVE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function archiveNav() {
+    var bar = document.querySelector('.archive-bar[data-archive-kind][data-archive-key]');
+    if (!bar || !window.fetch) return;
+    var kind = bar.dataset.archiveKind;
+    var key = bar.dataset.archiveKey;
+    if (!kind || !key) return;
+    function labelFor(k) {
+      if (kind === 'year') return k;
+      var m = parseInt(k.slice(5, 7), 10);
+      return (ARCHIVE_MONTHS[m - 1] || k.slice(5, 7)) + ' ' + k.slice(0, 4);
+    }
+    function hrefFor(k) { return (kind === 'year' ? 'year-' : 'month-') + k + '.html'; }
+    fetch('archive.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (idxData) {
+        var list = kind === 'year' ? idxData.years : idxData.months;
+        if (!Array.isArray(list)) return;
+        var pos = list.indexOf(key);
+        if (pos < 0) return;
+        var prevEl = bar.querySelector('[data-archive-prev]');
+        var nextEl = bar.querySelector('[data-archive-next]');
+        if (prevEl) {
+          if (pos > 0) {
+            prevEl.href = hrefFor(list[pos - 1]);
+            prevEl.textContent = '‹ ' + labelFor(list[pos - 1]);
+            prevEl.hidden = false;
+          } else {
+            prevEl.hidden = true;
+          }
+        }
+        if (nextEl) {
+          if (pos + 1 < list.length) {
+            nextEl.href = hrefFor(list[pos + 1]);
+            nextEl.textContent = labelFor(list[pos + 1]) + ' ›';
+            nextEl.hidden = false;
+          } else {
+            nextEl.hidden = true;
+          }
+        }
+      })
+      .catch(function () {});
+  }
+
+  function noaaViewer() {
+    var dialog = document.getElementById('noaa-dialog');
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+    var titleEl = document.getElementById('noaa-dialog-title');
+    var bodyEl = document.getElementById('noaa-dialog-body');
+    var rawEl = dialog.querySelector('[data-noaa-raw]');
+    var copyBtn = dialog.querySelector('[data-noaa-copy]');
+    var closeBtn = dialog.querySelector('[data-noaa-close]');
+    var reqId = 0;
+    var copyTimer = null;
+
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var link = e.target && e.target.closest ? e.target.closest('a[data-noaa-src]') : null;
+      if (!link) return;
+      var src = link.getAttribute('data-noaa-src');
+      if (!src) return;
+      e.preventDefault();
+      if (titleEl) titleEl.textContent = link.getAttribute('data-noaa-title') || 'NOAA Report';
+      if (rawEl) rawEl.setAttribute('href', src);
+      if (bodyEl) bodyEl.textContent = 'Loading NOAA report…';
+      if (copyBtn) copyBtn.textContent = 'Copy';
+      if (!dialog.open) dialog.showModal();
+      var myReq = ++reqId;
+      fetch(src)
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (txt) { if (myReq === reqId && bodyEl) bodyEl.textContent = txt; })
+        .catch(function () {
+          if (myReq === reqId && bodyEl) bodyEl.textContent = 'Unable to load NOAA report inline (' + src + '). Use "Raw .txt" above to open the file directly.';
+        });
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', function () { dialog.close(); });
+    dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.close(); });
+    if (copyBtn && bodyEl && navigator.clipboard && navigator.clipboard.writeText) {
+      copyBtn.addEventListener('click', function () {
+        navigator.clipboard.writeText(bodyEl.textContent || '').then(function () {
+          copyBtn.textContent = 'Copied';
+          clearTimeout(copyTimer);
+          copyTimer = setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1800);
+        }).catch(function () {});
+      });
+    }
+  }
+
   /* ---------- boot ---------- */
 
   function boot() {
@@ -371,6 +567,9 @@
     solar();
     radar();
     charts();
+    historyMatrix();
+    archiveNav();
+    noaaViewer();
     Promise.all([forecast(), alerts()]).then(function (res) {
       rainPeakFromForecast(res[0]);
       condition(res[0], res[1] || []);

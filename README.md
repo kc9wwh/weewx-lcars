@@ -8,6 +8,7 @@ An LCARS-style skin for [WeeWX](https://weewx.com) 5, built on the Titan.DS colo
 | `radar.html` | Sensor sweep: live NEXRAD radar in a circular scope with true-distance range rings, wind rose, readouts and solar track |
 | `kiosk.html` | 16:9 wall display with segmented meters; scales to any screen and reloads itself |
 | `yesterday` / `week` / `month` / `year` | Recorded extremes and aggregated charts for the period |
+| `history.html` | Consolidated history & archive: all-time extremes, heat-tinted monthly climate matrices, historical charts, per-year/month archive pages, and NOAA reports |
 
 Tested against WeeWX 5.1.0, 5.5.2 and 5.6.0.
 
@@ -89,7 +90,7 @@ Everything is in `skins/LCARS/skin.conf` under `[Extras]`. Override values in `w
     enable = true
     HTML_ROOT = /var/lib/weewx/www/lcars
     [[[Extras]]]
-        archive_url = ../neowx/archive.html
+        forecast_days = 5
         kiosk_refresh = 60
 ```
 
@@ -100,7 +101,6 @@ Everything is in `skins/LCARS/skin.conf` under `[Extras]`. Override values in `w
 | `highlight` | appTemp | Sensor that gets the coral connector line |
 | `kiosk_meters` | outTemp, outHumidity, dewpoint, windSpeed, cloudbase, rain | The six wall-display meters |
 | `kiosk_refresh` | 300 | Seconds between wall-display reloads (minimum 60) |
-| `archive_url`, `history_url` | `../archive.html`, `../history.html` | Buttons linking to another skin's pages. Blank hides them |
 | `forecast`, `forecast_days` | true, 3 | Open-Meteo forecast |
 | `nws_alerts` | true | US National Weather Service alerts. Severe or extreme alerts trigger red alert; others trigger amber |
 | `amber_gust`, `amber_precip_probability` | 40, 80 | Today's forecast thresholds for condition amber (gust in your wind units) |
@@ -129,10 +129,15 @@ skins/LCARS/
   index.html.tmpl           console
   radar.html.tmpl           radar scope
   kiosk.html.tmpl           wall display
+  history.html.tmpl         consolidated history & archive console
+  archive.json.tmpl         archive index manifest for progressive navigation
   yesterday|week|month|year.html.tmpl   thin wrappers around inc/period.inc
-  inc/                      shared Cheetah includes (frame, config JSON, chart data)
+  year-%Y.html.tmpl         archived year wrapper around inc/period.inc
+  month-%Y-%m.html.tmpl     archived month wrapper around inc/period.inc
+  NOAA/                     NOAA-format monthly & yearly text summary templates
+  inc/                      shared Cheetah includes (frame, records, config JSON, chart data, NOAA modal)
   lcars.css                 all styling; palette tokens at the top
-  lcars.js                  gauges, meters, forecast, alerts, charts, radar map, kiosk
+  lcars.js                  gauges, meters, forecast, alerts, charts, radar map, kiosk, history matrix, NOAA viewer
   fonts/, vendor/           bundled Antonio, ApexCharts, Leaflet
 ```
 

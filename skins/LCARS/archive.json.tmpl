@@ -1,0 +1,4 @@
+#import json
+#set $_yrs = list($SummaryByYear) if $varExists('SummaryByYear') else []
+#set $_mos = list($SummaryByMonth) if $varExists('SummaryByMonth') else []
+$json.dumps({'years': $_yrs, 'months': $_mos})

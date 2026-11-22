@@ -1,0 +1,86 @@
+#set $_tu = $unit.unit_type.outTemp
+#set $_ru = $unit.unit_type.rain
+#set $_tlbl = 'deg F' if $_tu == 'degree_F' else ('deg C' if $_tu == 'degree_C' else $unit.label.outTemp.strip())
+#set $_rlbl = $unit.label.rain.strip()
+#set $_wlbl = $unit.label.windSpeed.strip()
+#set $_rfmt = '%6.2f' if $_ru in ('inch', 'cm') else '%6.1f'
+#if $_tu == 'degree_F'
+#set $_t1 = (90.0, 'degree_F', 'group_temperature')
+#set $_t2 = (32.0, 'degree_F', 'group_temperature')
+#set $_t3 = (0.0, 'degree_F', 'group_temperature')
+#set $_l1 = '90 F'
+#set $_l2 = '32 F'
+#set $_l3 = ' 0 F'
+#else
+#set $_t1 = (32.0, 'degree_C', 'group_temperature')
+#set $_t2 = (0.0, 'degree_C', 'group_temperature')
+#set $_t3 = (-18.0, 'degree_C', 'group_temperature')
+#set $_l1 = '32 C'
+#set $_l2 = ' 0 C'
+#set $_l3 = '-18C'
+#end if
+#if $_ru == 'inch'
+#set $_r1 = (0.01, 'inch', 'group_rain')
+#set $_r2 = (0.10, 'inch', 'group_rain')
+#set $_r3 = (1.00, 'inch', 'group_rain')
+#set $_rl1 = '0.01 in'
+#set $_rl2 = '0.10 in'
+#set $_rl3 = '1.00 in'
+#elif $_ru == 'cm'
+#set $_r1 = (0.02, 'cm', 'group_rain')
+#set $_r2 = (0.20, 'cm', 'group_rain')
+#set $_r3 = (2.00, 'cm', 'group_rain')
+#set $_rl1 = '0.02 cm'
+#set $_rl2 = '0.20 cm'
+#set $_rl3 = '2.00 cm'
+#else
+#set $_r1 = (0.2, 'mm', 'group_rain')
+#set $_r2 = (2.0, 'mm', 'group_rain')
+#set $_r3 = (20.0, 'mm', 'group_rain')
+#set $_rl1 = '0.2 mm'
+#set $_rl2 = '2.0 mm'
+#set $_rl3 = '20.0 mm'
+#end if
+#def fmt_day_time($vh)
+#if $vh.raw is not None
+$('%5s' % $vh.format('%H:%M'))#slurp
+#else
+  ---#slurp
+#end if
+#end def
+#def fmt_day_num($vh)
+#if $vh.raw is not None
+$('%5s' % $vh.format('%d'))#slurp
+#else
+  ---#slurp
+#end if
+#end def
+#def fmt_dir($vh)
+#if $vh.raw is not None
+$('%4s' % $vh.ordinal_compass)#slurp
+#else
+ ---#slurp
+#end if
+#end def
+                   MONTHLY CLIMATOLOGICAL SUMMARY for $month_name $year_name
+
+NAME: $station.location
+ELEV: $station.altitude    LAT: $('%.4f' % $station.latitude_f)    LON: $('%.4f' % $station.longitude_f)
+
+TEMPERATURE ($_tlbl), RAIN ($_rlbl), WIND SPEED ($_wlbl)
+
+                                      HEAT  COOL         AVG
+    MEAN                              DEG   DEG          WIND               DOM
+DAY  TEMP   HIGH  TIME    LOW  TIME   DAYS  DAYS   RAIN  SPEED  HIGH  TIME  DIR
+-------------------------------------------------------------------------------
+#for $_d in $month.days
+#if $_d.outTemp.count.raw or $_d.rain.count.raw or $_d.windSpeed.count.raw
+$_d.start.format('%d') $_d.outTemp.avg.format(format_string='%6.1f', None_string='   ---', add_label=False) $_d.outTemp.max.format(format_string='%6.1f', None_string='   ---', add_label=False) $fmt_day_time($_d.outTemp.maxtime) $_d.outTemp.min.format(format_string='%6.1f', None_string='   ---', add_label=False) $fmt_day_time($_d.outTemp.mintime) $_d.heatdeg.sum.format(format_string='%6.1f', None_string='   ---', add_label=False) $_d.cooldeg.sum.format(format_string='%6.1f', None_string='   ---', add_label=False) $_d.rain.sum.format(format_string=$_rfmt, None_string='   ---', add_label=False) $_d.windSpeed.avg.format(format_string='%5.1f', None_string='  ---', add_label=False) $_d.wind.max.format(format_string='%5.1f', None_string='  ---', add_label=False) $fmt_day_time($_d.wind.maxtime) $fmt_dir($_d.wind.vecdir)
+#end if
+#end for
+-------------------------------------------------------------------------------
+    $month.outTemp.avg.format(format_string='%6.1f', None_string='   ---', add_label=False) $month.outTemp.max.format(format_string='%6.1f', None_string='   ---', add_label=False) $fmt_day_num($month.outTemp.maxtime) $month.outTemp.min.format(format_string='%6.1f', None_string='   ---', add_label=False) $fmt_day_num($month.outTemp.mintime) $month.heatdeg.sum.format(format_string='%6.1f', None_string='   ---', add_label=False) $month.cooldeg.sum.format(format_string='%6.1f', None_string='   ---', add_label=False) $month.rain.sum.format(format_string=$_rfmt, None_string='   ---', add_label=False) $month.windSpeed.avg.format(format_string='%5.1f', None_string='  ---', add_label=False) $month.wind.max.format(format_string='%5.1f', None_string='  ---', add_label=False) $fmt_day_num($month.wind.maxtime) $fmt_dir($month.wind.vecdir)
+
+Max >= $_l1: $month.outTemp.max_ge($_t1).format(format_string='%3d', None_string='---', add_label=False)   Max <= $_l2: $month.outTemp.max_le($_t2).format(format_string='%3d', None_string='---', add_label=False)   Min <= $_l2: $month.outTemp.min_le($_t2).format(format_string='%3d', None_string='---', add_label=False)   Min <= $_l3: $month.outTemp.min_le($_t3).format(format_string='%3d', None_string='---', add_label=False)
+Max daily rain: $month.rain.maxsum.format(format_string=$_rfmt.strip(), None_string='---', add_label=False) $_rlbl on day $($month.rain.maxsumtime.format('%d') if $month.rain.maxsumtime.raw is not None else '---')
+Days with rain: >= $_rl1: $month.rain.sum_ge($_r1).format(format_string='%2d', None_string='--', add_label=False)   >= $_rl2: $month.rain.sum_ge($_r2).format(format_string='%2d', None_string='--', add_label=False)   >= $_rl3: $month.rain.sum_ge($_r3).format(format_string='%2d', None_string='--', add_label=False)

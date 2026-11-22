@@ -1,0 +1,460 @@
+## LCARS skin: consolidated History & Archive console
+#set global $page = 'history'
+#include "inc/setup.inc"
+#import json
+#set $_mo_abbrs = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+#set $_mo_fulls = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+#set $_sm_set = set($SummaryByMonth) if $varExists('SummaryByMonth') else set()
+#set $_sy_set = set($SummaryByYear) if $varExists('SummaryByYear') else set()
+#set $_ru = $unit.unit_type.rain
+#if $_ru == 'inch'
+#set $_rthresh = (0.01, 'inch', 'group_rain')
+#set $_rthresh_lbl = '0.01 in'
+#set $_rfmt = '%.2f'
+#elif $_ru == 'cm'
+#set $_rthresh = (0.02, 'cm', 'group_rain')
+#set $_rthresh_lbl = '0.02 cm'
+#else
+#set $_rthresh = (0.2, 'mm', 'group_rain')
+#set $_rthresh_lbl = '0.2 mm'
+#set $_rfmt = '%.1f'
+#end if
+#set $_has_rain = $alltime.rain.has_data
+#set $_has_wind = $alltime.windSpeed.has_data
+#set $_has_gust = $alltime.windGust.has_data
+#set $_has_baro = $alltime.barometer.has_data
+#set $_metrics = [('tmax', 'High temp', 'Monthly & annual maximum temperature', $unit.unit_type.outTemp, $unit.label.outTemp.strip(), 'High', 'All-time max', 'max'), ('tavg', 'Avg temp', 'Monthly & annual mean temperature', $unit.unit_type.outTemp, $unit.label.outTemp.strip(), 'Avg', 'Multi-yr avg', 'avg'), ('tmin', 'Low temp', 'Monthly & annual minimum temperature', $unit.unit_type.outTemp, $unit.label.outTemp.strip(), 'Low', 'All-time min', 'min')]
+#if $_has_rain
+#silent $_metrics.append(('rain', 'Rain', 'Monthly & annual total precipitation', $unit.unit_type.rain, $unit.label.rain.strip(), 'Total', 'Multi-yr avg', 'avg'))
+#silent $_metrics.append(('rdays', 'Rain days', 'Days with precipitation >= ' + $_rthresh_lbl, 'count', 'days', 'Days', 'Multi-yr avg', 'avg'))
+#end if
+#if $_has_gust
+#silent $_metrics.append(('gust', 'Peak gust', 'Monthly & annual peak wind gust', $unit.unit_type.windGust, $unit.label.windGust.strip(), 'Peak', 'All-time max', 'max'))
+#end if
+#set $_col_acc = {}
+#set $_yr_acc = {}
+#for $_mt in $_metrics
+#set $_col_acc[$_mt[0]] = {i: [] for i in range(1, 13)}
+#set $_yr_acc[$_mt[0]] = []
+#end for
+#set $_rows_asc = []
+#set $_chart_months = []
+#for $_yr in list($alltime.years)
+#set $_ynum = $_yr.start.format('%Y')
+#set $_has_yr_page = ($_ynum in $_sy_set)
+#set $_mo_map = {}
+#for $_m in $_yr.months
+#set $_mo_map[int($_m.start.format('%m'))] = $_m
+#end for
+#set $_cells = {}
+#for $_mi in range(1, 13)
+#set $_m = $_mo_map.get($_mi)
+#if $_m is None
+#set $_cells[$_mi] = None
+#else
+#set $_mkey = '%s-%02d' % ($_ynum, $_mi)
+#set $_m_has_temp = $_m.outTemp.has_data
+#set $_m_has_rain = $_m.rain.has_data
+#set $_m_has_wind = $_m.windSpeed.has_data
+#set $_m_has_gust = $_m.windGust.has_data
+#set $_m_has_baro = $_m.barometer.has_data
+#if not ($_m_has_temp or $_m_has_rain or $_m_has_wind)
+#set $_cells[$_mi] = None
+#else
+#set $_md = {'mkey': $_mkey, 'has_page': ($_mkey in $_sm_set), 'tmax': None, 'tavg': None, 'tmin': None, 'rain': None, 'rdays': None, 'gust': None, 'temp_rng': '', 'rain_str': '', 'wind_str': ''}
+#set $_cm = {'ts': int($_m.start.raw) * 1000, 'tmax': None, 'tavg': None, 'tmin': None, 'rain': None, 'wavg': None, 'gust': None, 'bavg': None}
+#if $_m_has_temp
+#set $_tmax = $_m.outTemp.max
+#set $_tavg = $_m.outTemp.avg
+#set $_tmin = $_m.outTemp.min
+#if $_tmax.raw is not None
+#set $_md['tmax'] = {'raw': round(float($_tmax.raw), 1), 'fmt': $_tmax.formatted}
+#silent $_col_acc['tmax'][$_mi].append(float($_tmax.raw))
+#set $_cm['tmax'] = round(float($_tmax.raw), 1)
+#end if
+#if $_tavg.raw is not None
+#set $_md['tavg'] = {'raw': round(float($_tavg.raw), 1), 'fmt': $_tavg.formatted}
+#silent $_col_acc['tavg'][$_mi].append(float($_tavg.raw))
+#set $_cm['tavg'] = round(float($_tavg.raw), 1)
+#end if
+#if $_tmin.raw is not None
+#set $_md['tmin'] = {'raw': round(float($_tmin.raw), 1), 'fmt': $_tmin.formatted}
+#silent $_col_acc['tmin'][$_mi].append(float($_tmin.raw))
+#set $_cm['tmin'] = round(float($_tmin.raw), 1)
+#end if
+#set $_md['temp_rng'] = $_tmin.formatted + ' – ' + $_tmax.formatted
+#end if
+#if $_m_has_rain
+#set $_mr = $_m.rain.sum
+#if $_mr.raw is not None
+#set $_md['rain'] = {'raw': round(float($_mr.raw), 2), 'fmt': $_mr.formatted}
+#silent $_col_acc['rain'][$_mi].append(float($_mr.raw))
+#set $_cm['rain'] = round(float($_mr.raw), 2)
+#set $_md['rain_str'] = 'Rain ' + str($_mr)
+#end if
+#try
+#set $_mrd = $_m.rain.sum_ge($_rthresh)
+#if $_mrd.raw is not None
+#set $_md['rdays'] = {'raw': int($_mrd.raw), 'fmt': $_mrd.format(format_string='%.0f', None_string='', add_label=False)}
+#silent $_col_acc['rdays'][$_mi].append(float($_mrd.raw))
+#end if
+#except
+#pass
+#end try
+#end if
+#if $_m_has_wind
+#set $_mw = $_m.windSpeed.avg
+#if $_mw.raw is not None
+#set $_cm['wavg'] = round(float($_mw.raw), 1)
+#set $_md['wind_str'] = 'Wind ' + str($_mw)
+#end if
+#end if
+#if $_m_has_gust and 'gust' in $_col_acc
+#set $_mg = $_m.windGust.max
+#if $_mg.raw is not None
+#set $_md['gust'] = {'raw': round(float($_mg.raw), 1), 'fmt': $_mg.formatted}
+#silent $_col_acc['gust'][$_mi].append(float($_mg.raw))
+#set $_cm['gust'] = round(float($_mg.raw), 1)
+#end if
+#end if
+#if $_m_has_baro
+#set $_mb = $_m.barometer.avg
+#if $_mb.raw is not None
+#set $_cm['bavg'] = round(float($_mb.raw), 2)
+#end if
+#end if
+#set $_cells[$_mi] = $_md
+#silent $_chart_months.append($_cm)
+#end if
+#end if
+#end for
+#set $_yr_sum = {'tmax': None, 'tavg': None, 'tmin': None, 'rain': None, 'rdays': None, 'gust': None}
+#set $_yr_stats = []
+#if $_yr.outTemp.has_data
+#set $_ytmax = $_yr.outTemp.max
+#set $_ytavg = $_yr.outTemp.avg
+#set $_ytmin = $_yr.outTemp.min
+#if $_ytmax.raw is not None
+#set $_yr_sum['tmax'] = $_ytmax.formatted
+#silent $_yr_acc['tmax'].append(float($_ytmax.raw))
+#silent $_yr_stats.append('Hi ' + str($_ytmax))
+#end if
+#if $_ytavg.raw is not None
+#set $_yr_sum['tavg'] = $_ytavg.formatted
+#silent $_yr_acc['tavg'].append(float($_ytavg.raw))
+#end if
+#if $_ytmin.raw is not None
+#set $_yr_sum['tmin'] = $_ytmin.formatted
+#silent $_yr_acc['tmin'].append(float($_ytmin.raw))
+#silent $_yr_stats.append('Lo ' + str($_ytmin))
+#end if
+#end if
+#if $_has_rain and $_yr.rain.has_data
+#set $_yr_r = $_yr.rain.sum
+#if $_yr_r.raw is not None
+#set $_yr_sum['rain'] = $_yr_r.formatted
+#silent $_yr_acc['rain'].append(float($_yr_r.raw))
+#silent $_yr_stats.append('Rain ' + str($_yr_r))
+#end if
+#try
+#set $_yr_rd = $_yr.rain.sum_ge($_rthresh)
+#if $_yr_rd.raw is not None
+#set $_yr_sum['rdays'] = $_yr_rd.format(format_string='%.0f', None_string='', add_label=False)
+#silent $_yr_acc['rdays'].append(float($_yr_rd.raw))
+#end if
+#except
+#pass
+#end try
+#end if
+#if $_has_gust and $_yr.windGust.has_data
+#set $_yr_g = $_yr.windGust.max
+#if $_yr_g.raw is not None
+#set $_yr_sum['gust'] = $_yr_g.formatted
+#silent $_yr_acc['gust'].append(float($_yr_g.raw))
+#silent $_yr_stats.append('Gust ' + str($_yr_g))
+#end if
+#end if
+#silent $_rows_asc.append({'ynum': $_ynum, 'has_page': $_has_yr_page, 'cells': $_cells, 'sum': $_yr_sum, 'stats': ' · '.join($_yr_stats)})
+#end for
+#set $_rows = list(reversed($_rows_asc))
+#set $_nyrs = len($_rows)
+#set $_nmos = len($_chart_months)
+#set $_foot_rows = {}
+#if $_nyrs >= 2
+#for $_mt in $_metrics
+#set $_mid = $_mt[0]
+#set $_mode = $_mt[7]
+#set $_mfmt = $_rfmt if $_mid == 'rain' else ('%.1f' if $_mid in ('tmax', 'tavg', 'tmin', 'gust', 'rdays') else '%.1f')
+#set $_fcells = {}
+#for $_mi in range(1, 13)
+#set $_vals = $_col_acc[$_mid][$_mi]
+#if not $_vals
+#set $_fcells[$_mi] = None
+#elif $_mode == 'max'
+#set $_fcells[$_mi] = $_mfmt % max($_vals)
+#elif $_mode == 'min'
+#set $_fcells[$_mi] = $_mfmt % min($_vals)
+#else
+#set $_fcells[$_mi] = $_mfmt % (sum($_vals) / len($_vals))
+#end if
+#end for
+#set $_yvals = $_yr_acc[$_mid]
+#if not $_yvals
+#set $_foverall = '–'
+#elif $_mid == 'tmax'
+#set $_foverall = $alltime.outTemp.max.formatted
+#elif $_mid == 'tmin'
+#set $_foverall = $alltime.outTemp.min.formatted
+#elif $_mid == 'tavg'
+#set $_foverall = $alltime.outTemp.avg.formatted
+#elif $_mid == 'gust'
+#set $_foverall = $alltime.windGust.max.formatted
+#else
+#set $_foverall = $_mfmt % (sum($_yvals) / len($_yvals))
+#end if
+#set $_foot_rows[$_mid] = {'cells': $_fcells, 'overall': $_foverall}
+#end for
+#end if
+#if $_nmos >= 2
+#set $_trend_lbl = 'monthly summaries'
+#set $_xfmt = 'MMM yyyy'
+#set $_pts = $_chart_months
+#else
+#set $_trend_lbl = 'daily summaries'
+#set $_xfmt = 'dd MMM yyyy'
+#set $_pts = []
+#for $_d in $alltime.days
+#set $_d_temp = $_d.outTemp.has_data
+#set $_d_rain = $_d.rain.has_data
+#set $_d_wind = $_d.windSpeed.has_data
+#set $_d_gust = $_d.windGust.has_data
+#set $_d_baro = $_d.barometer.has_data
+#if $_d_temp or $_d_rain or $_d_wind
+#set $_pt = {'ts': int($_d.start.raw) * 1000, 'tmax': None, 'tavg': None, 'tmin': None, 'rain': None, 'wavg': None, 'gust': None, 'bavg': None}
+#if $_d_temp
+#if $_d.outTemp.max.raw is not None
+#set $_pt['tmax'] = round(float($_d.outTemp.max.raw), 1)
+#end if
+#if $_d.outTemp.avg.raw is not None
+#set $_pt['tavg'] = round(float($_d.outTemp.avg.raw), 1)
+#end if
+#if $_d.outTemp.min.raw is not None
+#set $_pt['tmin'] = round(float($_d.outTemp.min.raw), 1)
+#end if
+#end if
+#if $_d_rain and $_d.rain.sum.raw is not None
+#set $_pt['rain'] = round(float($_d.rain.sum.raw), 2)
+#end if
+#if $_d_wind and $_d.windSpeed.avg.raw is not None
+#set $_pt['wavg'] = round(float($_d.windSpeed.avg.raw), 1)
+#end if
+#if $_d_gust and $_d.windGust.max.raw is not None
+#set $_pt['gust'] = round(float($_d.windGust.max.raw), 1)
+#end if
+#if $_d_baro and $_d.barometer.avg.raw is not None
+#set $_pt['bavg'] = round(float($_d.barometer.avg.raw), 2)
+#end if
+#silent $_pts.append($_pt)
+#end if
+#end for
+#end if
+#set $_charts_list = []
+#silent $_charts_list.append({'id': 'temp', 'title': $obs.label.outTemp, 'unit': $unit.label.outTemp.strip(), 'xFormat': $_xfmt, 'series': [{'name': 'High', 'data': [[p['ts'], p['tmax']] for p in $_pts]}, {'name': 'Avg', 'data': [[p['ts'], p['tavg']] for p in $_pts]}, {'name': 'Low', 'data': [[p['ts'], p['tmin']] for p in $_pts]}]})
+#if $_has_rain
+#silent $_charts_list.append({'id': 'rain', 'title': $obs.label.rain, 'unit': $unit.label.rain.strip(), 'type': 'bar', 'xFormat': $_xfmt, 'series': [{'name': $obs.label.rain, 'data': [[p['ts'], p['rain']] for p in $_pts]}]})
+#end if
+#if $_has_wind
+#silent $_charts_list.append({'id': 'wind', 'title': $obs.label.windSpeed, 'unit': $unit.label.windSpeed.strip(), 'xFormat': $_xfmt, 'series': [{'name': 'Avg', 'data': [[p['ts'], p['wavg']] for p in $_pts]}, {'name': 'Gust', 'data': [[p['ts'], p['gust']] for p in $_pts]}]})
+#end if
+#if $_has_baro
+#silent $_charts_list.append({'id': 'baro', 'title': $obs.label.barometer, 'unit': $unit.label.barometer.strip(), 'xFormat': $_xfmt, 'series': [{'name': $obs.label.barometer, 'data': [[p['ts'], p['bavg']] for p in $_pts]}]})
+#end if
+#set $_chart_payload = {'charts': $_charts_list}
+<!doctype html>
+<html lang="en">
+<head>
+#include "inc/head.inc"
+<title>$stn · History</title>
+</head>
+#include "inc/frame_open.inc"
+<header class="console-head">
+<div>
+<div class="kicker">Historical archive · all time</div>
+<h1>$stn</h1>
+</div>
+<div class="clock">
+<div class="time">History</div>
+<div class="when">$alltime.start.format("%d.%m.%Y") – $alltime.end.format("%d.%m.%Y") • $_nyrs $('year' if $_nyrs == 1 else 'years') · $_nmos $('month' if $_nmos == 1 else 'months')</div>
+</div>
+</header>
+
+<main class="content" id="content">
+
+<section aria-labelledby="h-all">
+<div class="sect"><i class="cap c-peach"></i><h2 class="label c-peach" id="h-all">Recorded extremes · All time</h2><i class="fill"></i><i class="end"></i></div>
+#set global $P = $alltime
+#set global $tfmt = '%d.%m.%Y'
+#include "inc/records.inc"
+</section>
+
+<section aria-labelledby="h-matrix">
+<div class="sect"><i class="cap c-mist"></i><h2 class="label c-mist" id="h-matrix">Climate matrix · Monthly history</h2><i class="fill"></i><i class="end"></i></div>
+<div class="hist-tabs" role="tablist" aria-label="Climate metric">
+#for $_ti, $_mt in enumerate($_metrics)
+<button type="button" class="hist-tab$(' is-active' if $_ti == 0 else '')" role="tab" id="tab-$_mt[0]" aria-controls="panel-$_mt[0]" aria-selected="$('true' if $_ti == 0 else 'false')" tabindex="$('0' if $_ti == 0 else '-1')" data-matrix-tab="$_mt[0]">$_mt[1]</button>
+#end for
+</div>
+#for $_mt in $_metrics
+#set $_mid = $_mt[0]
+#set $_mlabel = $_mt[1]
+#set $_mdesc = $_mt[2]
+#set $_munit = $_mt[3]
+#set $_mulbl = $_mt[4]
+#set $_mcol = $_mt[5]
+#set $_mfoot_lbl = $_mt[6]
+<div class="hist-panel" id="panel-$_mid" role="tabpanel" aria-labelledby="tab-$_mid" data-matrix-panel="$_mid">
+<div class="hist-meta">
+<span><strong>$_mlabel</strong>#if $_mulbl# · $_mulbl#end if# — $_mdesc</span>
+<span class="hist-hint">Select any year or month to open its archive</span>
+</div>
+<div class="table-wrap">
+<table class="hist-table">
+<thead>
+<tr>
+<th scope="col" class="yr-col">Year</th>
+#for $_abbr in $_mo_abbrs
+<th scope="col">$_abbr</th>
+#end for
+<th scope="col" class="yr-sum">$_mcol</th>
+<th scope="col" class="noaa-col">NOAA</th>
+</tr>
+</thead>
+<tbody>
+#for $_r in $_rows
+<tr>
+<th scope="row" class="yr-col">
+#if $_r['has_page']
+<a class="yr-link" href="year-${_r['ynum']}.html">$_r['ynum']</a>
+#else
+<span>$_r['ynum']</span>
+#end if
+</th>
+#for $_mi in range(1, 13)
+#set $_cell = $_r['cells'].get($_mi)
+#set $_val = $_cell.get($_mid) if $_cell else None
+#if $_val is not None
+<td data-metric="$_mid" data-unit="$_munit" data-val="$_val['raw']">
+#if $_cell['has_page']
+<a href="month-${_cell['mkey']}.html" title="$_mo_fulls[$_mi - 1] $_r['ynum'] archive">$_val['fmt']</a>
+#else
+<span>$_val['fmt']</span>
+#end if
+</td>
+#else
+<td class="is-empty">–</td>
+#end if
+#end for
+#set $_ys = $_r['sum'].get($_mid)
+<td class="yr-sum">
+#if $_ys is not None
+#if $_r['has_page']
+<a href="year-${_r['ynum']}.html">$_ys</a>
+#else
+<span>$_ys</span>
+#end if
+#else
+–
+#end if
+</td>
+<td class="noaa-col">
+#if $_r['has_page']
+<a class="noaa-chip" href="NOAA/NOAA-${_r['ynum']}.txt" data-noaa-src="NOAA/NOAA-${_r['ynum']}.txt" data-noaa-title="NOAA Annual Summary · $_r['ynum']">TXT</a>
+#else
+–
+#end if
+</td>
+</tr>
+#end for
+</tbody>
+#if $_nyrs >= 2
+#set $_fr = $_foot_rows[$_mid]
+<tfoot>
+<tr>
+<th scope="row" class="yr-col">$_mfoot_lbl</th>
+#for $_mi in range(1, 13)
+#set $_fv = $_fr['cells'].get($_mi)
+<td class="foot-cell">$($_fv if $_fv is not None else '–')</td>
+#end for
+<td class="yr-sum foot-cell">$_fr['overall']</td>
+<td class="noaa-col foot-cell">–</td>
+</tr>
+</tfoot>
+#end if
+</table>
+</div>
+</div>
+#end for
+</section>
+
+<section aria-labelledby="h-logs">
+<div class="sect"><i class="cap c-coral"></i><h2 class="label c-coral" id="h-logs">Archive logs · Period &amp; NOAA reports</h2><i class="fill"></i><i class="end"></i></div>
+<div class="archive-list">
+#for $_r in $_rows
+<div class="archive-year">
+<div class="archive-year-head">
+#if $_r['has_page']
+<a class="btn c-peach archive-yr-btn" href="year-${_r['ynum']}.html">$_r['ynum']</a>
+#else
+<span class="btn c-peach archive-yr-btn">$_r['ynum']</span>
+#end if
+<div class="archive-yr-stats">$_r['stats']</div>
+#if $_r['has_page']
+<a class="pill-btn c-lav" href="NOAA/NOAA-${_r['ynum']}.txt" data-noaa-src="NOAA/NOAA-${_r['ynum']}.txt" data-noaa-title="NOAA Annual Summary · $_r['ynum']">NOAA $_r['ynum']</a>
+#end if
+</div>
+<div class="archive-months">
+#for $_mi, $_abbr in enumerate($_mo_abbrs, 1)
+#set $_cell = $_r['cells'].get($_mi)
+#if $_cell is not None and $_cell['has_page']
+<div class="archive-month">
+<div class="archive-month-head">
+<a class="archive-month-name" href="month-${_cell['mkey']}.html">$_abbr</a>
+<a class="noaa-chip" href="NOAA/NOAA-${_cell['mkey']}.txt" data-noaa-src="NOAA/NOAA-${_cell['mkey']}.txt" data-noaa-title="NOAA Monthly Summary · $_mo_fulls[$_mi - 1] $_r['ynum']">NOAA</a>
+</div>
+<a class="archive-month-stats" href="month-${_cell['mkey']}.html">
+#if $_cell['temp_rng']
+<b>$_cell['temp_rng']<small>$unit.label.outTemp.strip()</small></b>
+#end if
+#if $_cell['rain_str']
+<span>$_cell['rain_str']</span>
+#elif $_cell['wind_str']
+<span>$_cell['wind_str']</span>
+#end if
+</a>
+</div>
+#else
+<div class="archive-month is-empty"><span class="archive-month-name">$_abbr</span><span class="archive-month-none">No data</span></div>
+#end if
+#end for
+</div>
+</div>
+#end for
+</div>
+</section>
+
+<section aria-labelledby="h-trend">
+<div class="sect"><i class="cap c-lav"></i><h2 class="label c-lav" id="h-trend">Trend bay · $_trend_lbl</h2><i class="fill"></i></div>
+<div class="charts" data-charts></div>
+</section>
+
+</main>
+#include "inc/frame_close.inc"
+#include "inc/noaa_dialog.inc"
+<script type="application/json" id="wx-charts">
+$json.dumps($_chart_payload)
+</script>
+#include "inc/config.inc"
+<script src="vendor/apexcharts.min.js" defer></script>
+<script src="lcars.js" defer></script>
+</body>
+</html>

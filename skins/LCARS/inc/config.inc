@@ -10,6 +10,6 @@
   "amberGust": $float($Extras.get('amber_gust', 40)),
   "amberPop": $float($Extras.get('amber_precip_probability', 80)),
   "kioskRefresh": $int($Extras.get('kiosk_refresh', 300)),
-  "dataTime": $current.dateTime.raw
+  "dataTime": $($current.dateTime.raw if $current.dateTime.raw is not None else 'null')
 }
 </script>
