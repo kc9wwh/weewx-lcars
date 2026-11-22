@@ -29,6 +29,7 @@
 
 <section class="wind" aria-labelledby="h-wind">
 <div class="sect" style="margin-bottom:0"><i class="cap c-dark"></i><h2 class="label c-dark" id="h-wind" style="flex:1">Wind vector</h2></div>
+<div class="wind-body">
 <svg class="rose" viewBox="0 0 260 260" role="img" aria-label="Wind from $current.windDir.ordinal_compass at $current.windSpeed">
 <circle cx="130" cy="130" r="112" fill="#0c1319" stroke="#78c0e8" stroke-width="3"/>
 <circle cx="130" cy="130" r="80" fill="none" stroke="#243c50" stroke-width="1.5" stroke-dasharray="3 5"/>
@@ -50,6 +51,7 @@
 #end if
 <circle cx="130" cy="130" r="6" fill="#98a0b8"/>
 </svg>
+<div class="wind-stats">
 <div class="windspeed">$current.windSpeed.formatted<small>$unit.label.windSpeed.strip() from $current.windDir.ordinal_compass</small></div>
 <div class="wind-row"><span>Average</span><span>$day.windSpeed.avg</span></div>
 <div class="gauge sm" aria-hidden="true" data-scale="speed" data-unit="$unit.unit_type.windSpeed" data-v="$day.windSpeed.avg.raw"><i class="track"></i><i class="fill"></i><i class="knob"></i></div>
@@ -59,6 +61,8 @@
 #if $day.windrun.has_data
 <div class="wind-row wind-run"><span>Wind run</span><span>$day.windrun.sum</span></div>
 #end if
+</div>
+</div>
 </section>
 
 <section class="scope-wrap" aria-labelledby="h-scope">

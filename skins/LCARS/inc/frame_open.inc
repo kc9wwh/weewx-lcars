@@ -16,5 +16,6 @@
 <div class="elbow elbow-bottom" aria-hidden="true"><span>$station.hardware</span></div>
 </aside>
 <div class="main">
-<div class="bar" aria-hidden="true"><i class="s-rail"></i><i class="s-peach"></i><i class="s-lav"></i><i class="cap"></i></div>
+<div class="bar" aria-hidden="true"><i class="s-elbow"><span>WX·01</span></i><i class="s-rail"></i><i class="s-peach"></i><i class="s-lav"></i><i class="cap"></i></div>
+<div class="offline-banner" data-offline-banner role="status" hidden>Offline · showing cached readings</div>
 <div class="alert-banner" data-alert-banner role="status" hidden></div>

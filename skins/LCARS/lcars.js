@@ -263,19 +263,20 @@
       jobs.push([box, c]);
     });
     // Render only after every panel is in the grid, so each chart measures its final column width.
+    var narrow = window.innerWidth <= 640;
     jobs.forEach(function (job) {
       var box = job[0], c = job[1];
       var bar = c.type === 'bar';
       new window.ApexCharts(box, {
-        chart: { type: bar ? 'bar' : 'line', height: 230, background: 'transparent', foreColor: '#98a0b8', fontFamily: 'Antonio, Arial Narrow, sans-serif', toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: false } },
+        chart: { type: bar ? 'bar' : 'line', height: narrow ? 185 : 230, background: 'transparent', foreColor: '#98a0b8', fontFamily: 'Antonio, Arial Narrow, sans-serif', toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: false } },
         theme: { mode: 'dark' },
         colors: bar ? ['#ef7257'] : CHART_COLORS,
         series: c.series,
         stroke: { width: bar ? 0 : 2, curve: 'straight' },
         dataLabels: { enabled: false },
         grid: { borderColor: '#313749', strokeDashArray: 3 },
-        xaxis: { type: 'datetime', labels: { datetimeUTC: false }, axisBorder: { color: '#313749' }, axisTicks: { color: '#313749' } },
-        yaxis: { labels: { formatter: function (v) { return v === null || v === undefined ? '' : (Math.abs(v) < 10 && v % 1 ? v.toFixed(2) : Math.round(v * 10) / 10); } } },
+        xaxis: { type: 'datetime', labels: { datetimeUTC: false, hideOverlappingLabels: true, style: { fontSize: narrow ? '11px' : '12px' } }, axisBorder: { color: '#313749' }, axisTicks: { color: '#313749' } },
+        yaxis: { labels: { style: { fontSize: narrow ? '11px' : '12px' }, formatter: function (v) { return v === null || v === undefined ? '' : (Math.abs(v) < 10 && v % 1 ? v.toFixed(2) : Math.round(v * 10) / 10); } } },
         legend: { show: c.series.length > 1, labels: { colors: '#d6d9e4' } },
         tooltip: { theme: 'dark', x: { format: c.xFormat || 'dd MMM HH:mm' }, y: { formatter: function (v) { return v === null ? '–' : v + ' ' + (c.unit || ''); } } },
         plotOptions: { bar: { columnWidth: '70%' } },
@@ -337,11 +338,16 @@
     var stage = document.getElementById('stage');
     if (!stage) return;
     function fit() {
+      if (window.innerWidth <= 720 && window.innerHeight > window.innerWidth) {
+        stage.style.transform = '';
+        return;
+      }
       var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
-      stage.style.transform = 'scale(' + s + ')';
+      stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
     }
     fit();
     window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
     var clock = document.querySelector('[data-clock]');
     if (clock) {
       setInterval(function () {
@@ -558,6 +564,110 @@
     }
   }
 
+  /* ---------- mobile drawer & PWA ---------- */
+
+  function mobileNav() {
+    var sheet = document.getElementById('mobile-sheet');
+    var backdrop = document.querySelector('.m-backdrop');
+    var toggle = document.querySelector('[data-nav-toggle]');
+    if (!sheet || !toggle) return;
+
+    function setOpen(open) {
+      sheet.hidden = !open;
+      if (backdrop) backdrop.hidden = !open;
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (!open && window.location.hash === '#mobile-sheet' && window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
+
+    if (window.location.hash === '#mobile-sheet') setOpen(true);
+
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      setOpen(sheet.hidden);
+    });
+
+    document.querySelectorAll('[data-nav-close]').forEach(function (el) {
+      el.addEventListener('click', function () { setOpen(false); });
+    });
+
+    sheet.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { setOpen(false); });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !sheet.hidden) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+
+  function pwa() {
+    var secureOrigin = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if ('serviceWorker' in navigator && secureOrigin) {
+      navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function (e) {
+        console.warn('LCARS: service worker registration failed', e);
+      });
+    }
+
+    document.querySelectorAll('[data-pwa-refresh]').forEach(function (btn) {
+      btn.addEventListener('click', function () { window.location.reload(); });
+    });
+
+    var installBtn = document.querySelector('[data-pwa-install]');
+    var deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) installBtn.hidden = false;
+    });
+    if (installBtn) {
+      installBtn.addEventListener('click', function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function (res) {
+          if (res && res.outcome === 'accepted') installBtn.hidden = true;
+          deferredPrompt = null;
+        }).catch(function () {});
+      });
+    }
+    window.addEventListener('appinstalled', function () {
+      deferredPrompt = null;
+      if (installBtn) installBtn.hidden = true;
+    });
+
+    var iosHint = document.querySelector('[data-ios-install-hint]');
+    var isStandalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (iosHint && isIOS && !isStandalone) iosHint.hidden = false;
+
+    var offlineBanners = document.querySelectorAll('[data-offline-banner]');
+    function syncOnline() {
+      var off = navigator.onLine === false;
+      offlineBanners.forEach(function (b) { b.hidden = !off; });
+    }
+    syncOnline();
+    window.addEventListener('online', syncOnline);
+    window.addEventListener('offline', syncOnline);
+
+    var bootAt = Date.now();
+    if (!document.body.classList.contains('kiosk')) {
+      var reloadIfStale = function () {
+        if (navigator.onLine !== false && (Date.now() - bootAt > 300000)) {
+          window.location.reload();
+        }
+      };
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') reloadIfStale();
+      });
+      window.addEventListener('pageshow', function (e) {
+        if (e.persisted) reloadIfStale();
+      });
+    }
+  }
+
   /* ---------- boot ---------- */
 
   function boot() {
@@ -570,6 +680,8 @@
     historyMatrix();
     archiveNav();
     noaaViewer();
+    mobileNav();
+    pwa();
     Promise.all([forecast(), alerts()]).then(function (res) {
       rainPeakFromForecast(res[0]);
       condition(res[0], res[1] || []);

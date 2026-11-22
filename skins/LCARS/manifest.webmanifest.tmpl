@@ -1,0 +1,14 @@
+#include "inc/setup.inc"
+#import json
+#set $_custom_short = str($Extras.get('pwa_short_name', '') or '').strip()
+#if $_custom_short
+#set $_short = $_custom_short
+#else
+#set $_short = $stn if len($stn) <= 14 else ($stn[:12].rstrip() or $stn[:12])
+#end if
+#set $_name = $stn if 'lcars' in $stn.lower() else ($stn + ' · LCARS')
+#set $_icons = [{'src': 'icons/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'}, {'src': 'icons/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'}, {'src': 'icons/icon-maskable-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'}]
+#set $_shortcut_icon = [{'src': 'icons/icon-192.png', 'sizes': '192x192', 'type': 'image/png'}]
+#set $_shortcuts = [{'name': 'Current Conditions', 'short_name': 'Current', 'url': './index.html', 'icons': $_shortcut_icon}, {'name': 'Radar Scope', 'short_name': 'Radar', 'url': './radar.html', 'icons': $_shortcut_icon}, {'name': 'History & Archive', 'short_name': 'History', 'url': './history.html', 'icons': $_shortcut_icon}, {'name': 'Wall Display', 'short_name': 'Wall', 'url': './kiosk.html', 'icons': $_shortcut_icon}]
+#set $_manifest = {'id': './', 'name': $_name, 'short_name': $_short, 'description': 'LCARS weather station console, radar scope, archive and wall display.', 'start_url': './index.html', 'scope': './', 'display': 'standalone', 'display_override': ['standalone', 'minimal-ui'], 'orientation': 'any', 'background_color': '#000000', 'theme_color': '#000000', 'categories': ['weather', 'utilities'], 'icons': $_icons, 'shortcuts': $_shortcuts}
+$json.dumps($_manifest, indent=2)

@@ -1,5 +1,6 @@
 ## Shared setup: station title, sensor lists and navigation (sets globals).
 #set global $stn = $Extras.get('station_title', '') or $station.location
+#set global $stn_attr = $stn.replace('&', '&amp;').replace('"', '&quot;')
 #set $raw = $Extras.get('secondary', ['dewpoint', 'windchill', 'heatindex', 'appTemp', 'cloudbase', 'barometer'])
 #set global $secondary = [$raw] if isinstance($raw, str) else list($raw)
 #set global $hot = $Extras.get('highlight', '')

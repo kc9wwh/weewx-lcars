@@ -97,6 +97,7 @@ Everything is in `skins/LCARS/skin.conf` under `[Extras]`. Override values in `w
 | Setting | Default | What it does |
 |---|---|---|
 | `station_title` | `location` from weewx.conf | Name on every page |
+| `pwa_short_name` | derived from `station_title` | Short home-screen label for the installed PWA |
 | `secondary` | dewpoint, windchill, heatindex, appTemp, cloudbase, barometer | Additional sensors, in order. Sensors with no data are skipped |
 | `highlight` | appTemp | Sensor that gets the coral connector line |
 | `kiosk_meters` | outTemp, outHumidity, dewpoint, windSpeed, cloudbase, rain | The six wall-display meters |
@@ -108,6 +109,12 @@ Everything is in `skins/LCARS/skin.conf` under `[Extras]`. Override values in `w
 | `radar_tiles`, `basemap_tiles` | IEM NEXRAD, CARTO dark | Map tile sources |
 
 Gauge scales follow your unit system (°F/°C, mph/km/h/m/s/knots, in/mm, inHg/hPa).
+
+## Mobile & PWA
+
+Narrow screens (`<= 860px`) switch from the left rail to a slim top LCARS elbow bar, a 2-column primary reading grid, compact wire-connected sensor rows, and a bottom navigation dock with an auxiliary drawer (`More`) for all 8 views, quick refresh, and app installation. The wall display (`kiosk.html`) also adapts into a scrollable 3×2 vertical meter console when viewed in phone portrait orientation while keeping the scaled 16:9 stage in landscape.
+
+`manifest.webmanifest` and `sw.js` enable Progressive Web App installation on iOS and Android (Add to Home Screen / Install app) with offline shell caching and automatic stale-data refresh on resume. Service workers and browser install prompts require serving the site over **HTTPS** (or `localhost` for testing).
 
 ## Development
 
@@ -131,14 +138,16 @@ skins/LCARS/
   kiosk.html.tmpl           wall display
   history.html.tmpl         consolidated history & archive console
   archive.json.tmpl         archive index manifest for progressive navigation
+  manifest.webmanifest.tmpl Web App Manifest for PWA installation
   yesterday|week|month|year.html.tmpl   thin wrappers around inc/period.inc
   year-%Y.html.tmpl         archived year wrapper around inc/period.inc
   month-%Y-%m.html.tmpl     archived month wrapper around inc/period.inc
   NOAA/                     NOAA-format monthly & yearly text summary templates
   inc/                      shared Cheetah includes (frame, records, config JSON, chart data, NOAA modal)
   lcars.css                 all styling; palette tokens at the top
-  lcars.js                  gauges, meters, forecast, alerts, charts, radar map, kiosk, history matrix, NOAA viewer
-  fonts/, vendor/           bundled Antonio, ApexCharts, Leaflet
+  lcars.js                  gauges, meters, forecast, alerts, charts, radar map, kiosk, history matrix, NOAA viewer, mobile nav, PWA
+  sw.js                     service worker (network-first weather pages, cache-first bundled assets)
+  fonts/, icons/, vendor/   bundled Antonio, PWA PNG icons, ApexCharts, Leaflet
 ```
 
 Template notes: WeeWX's `$obs.label` needs `[key]` access, while `$unit.label` and `$unit.unit_type` need `getattr`. Avoid `#errorCatcher`, because it breaks expressions that start with a quote. Use `#set global` to pass values into includes; macros defined in an include are not visible to the page that includes it.

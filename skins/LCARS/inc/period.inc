@@ -29,6 +29,15 @@
 
 <main class="content" id="content">
 
+#if not $_has_archive
+<nav class="period-switch" aria-label="Time period">
+<a class="c-lav$(' is-active' if $page == 'yesterday' else '')" href="yesterday.html"#if $page == 'yesterday'# aria-current="page"#end if#>Yesterday</a>
+<a class="c-slate$(' is-active' if $page == 'week' else '')" href="week.html"#if $page == 'week'# aria-current="page"#end if#>Week</a>
+<a class="c-mist$(' is-active' if $page == 'month' else '')" href="month.html"#if $page == 'month'# aria-current="page"#end if#>Month</a>
+<a class="c-lav$(' is-active' if $page == 'year' else '')" href="year.html"#if $page == 'year'# aria-current="page"#end if#>Year</a>
+</nav>
+#end if
+
 #if $_has_archive
 <nav class="archive-bar" aria-label="Archive navigation" data-archive-kind="$_akind" data-archive-key="$_akey">
 <a class="pill-btn c-lav" href="history.html">← History</a>

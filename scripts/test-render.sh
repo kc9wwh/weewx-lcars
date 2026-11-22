@@ -131,9 +131,41 @@ for src_rel, body in rendered_archive:
         if not os.path.exists(os.path.join(out, target)):
             print(f'    {src_rel}: broken link -> {target}'); fail = True
 
-for asset in ['lcars.css', 'lcars.js', 'vendor/apexcharts.min.js', 'vendor/leaflet.js', 'fonts/antonio-latin-400-normal.woff2']:
-    if not os.path.exists(os.path.join(out, asset)):
-        print(f'    MISSING {asset}'); fail = True
+for asset in ['lcars.css', 'lcars.js', 'sw.js', 'vendor/apexcharts.min.js', 'vendor/leaflet.js', 'fonts/antonio-latin-400-normal.woff2']:
+    p = os.path.join(out, asset)
+    if not os.path.exists(p) or os.path.getsize(p) == 0:
+        print(f'    MISSING or empty {asset}'); fail = True
+
+png_icons = ['icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png']
+for rel in png_icons:
+    p = os.path.join(out, rel)
+    if not os.path.exists(p):
+        print(f'    MISSING {rel}'); fail = True
+    elif open(p, 'rb').read(4) != b'\x89PNG':
+        print(f'    {rel}: invalid PNG signature'); fail = True
+
+mf_path = os.path.join(out, 'manifest.webmanifest')
+if not os.path.exists(mf_path):
+    print('    MISSING manifest.webmanifest'); fail = True
+else:
+    try:
+        mf_raw = open(mf_path, encoding='utf-8').read()
+        leftovers = re.findall(r'\$[A-Za-z_][\w.]*', mf_raw)
+        if leftovers:
+            print(f'    manifest.webmanifest: unrendered Cheetah placeholders {sorted(set(leftovers))[:5]}'); fail = True
+        mf = json.loads(mf_raw)
+        for req_k in ('name', 'short_name', 'start_url'):
+            if not str(mf.get(req_k, '')).strip():
+                print(f'    manifest.webmanifest: missing {req_k}'); fail = True
+        if mf.get('display') != 'standalone':
+            print(f'    manifest.webmanifest: display != standalone ({mf.get("display")})'); fail = True
+        for ic in mf.get('icons', []):
+            src = ic.get('src', '')
+            if not src or not os.path.exists(os.path.join(out, src)):
+                print(f'    manifest.webmanifest: missing icon {src}'); fail = True
+        print(f'    ok  manifest.webmanifest  ({mf.get("short_name")})')
+    except Exception as e:
+        print(f'    manifest.webmanifest: bad JSON: {e}'); fail = True
 sys.exit(1 if fail else 0)
 PY
 echo "==> All pages rendered. Output: $STATION/public_html/lcars"
