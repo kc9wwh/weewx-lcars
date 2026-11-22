@@ -1,4 +1,4 @@
-# Installer for the LCARS skin. Use:  weectl extension install weewx-lcars-<version>.zip
+# Installer for the LCARS skin. Use:  weectl extension install weewx-lcars.zip
 import os
 from weecfg.extension import ExtensionInstaller
 

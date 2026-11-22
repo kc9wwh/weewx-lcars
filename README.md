@@ -12,73 +12,20 @@ An LCARS-style skin for [WeeWX](https://weewx.com) 5, built on the Titan.DS colo
 
 Tested against WeeWX 5.1.0, 5.5.2 and 5.6.0.
 
-## Install
+## Install & Upgrade
 
-Download `weewx-lcars-<version>.zip` from [Releases](https://github.com/kc9wwh/weewx-lcars/releases), then:
+Run the same commands for a fresh install or an in-place upgrade (WeeWX 5):
 
-```
-sudo weectl extension install weewx-lcars-<version>.zip
+```bash
+sudo weectl extension install https://github.com/kc9wwh/weewx-lcars/releases/latest/download/weewx-lcars.zip
 sudo systemctl restart weewx
 ```
 
-The installer adds a `[[LCARSReport]]` section to `weewx.conf` that writes the site to an `lcars` folder inside your `HTML_ROOT`. It runs alongside your existing skin.
+*(For a `pip` / virtual environment install, activate your venv and omit `sudo`.)*
 
-### Package installs (Debian, Arch, etc.)
+The installer adds a `[[LCARSReport]]` section to `weewx.conf` that writes the site to an `lcars` folder inside your `HTML_ROOT` alongside your existing skin. When upgrading, install directly **without** running `weectl extension uninstall` first so your `[[[Extras]]]` overrides in `weewx.conf` are preserved.
 
-`weectl extension install` copies skins into `<WEEWX_ROOT>/skins`, but some packages read skins from somewhere else. Check that the folder ended up where WeeWX looks:
-
-```
-grep -nE '^\s*(WEEWX_ROOT|SKIN_ROOT|HTML_ROOT)' /etc/weewx/weewx.conf
-ls -d /usr/share/weewx/skins/* /etc/weewx/skins/* /usr/lib/weewx/skins/* 2>/dev/null
-```
-
-If `LCARS` landed somewhere other than `[StdReport]`'s `SKIN_ROOT`, symlink it into `[StdReport]`'s `SKIN_ROOT` (instead of setting a per-report `SKIN_ROOT` under `[[LCARSReport]]`, which WeeWX's `CheetahGenerator` ignores when reading `skin.conf` and `.tmpl` files):
-
-```
-# Example when WEEWX_ROOT is /usr/lib/weewx and [StdReport] SKIN_ROOT is /etc/weewx/skins
-sudo rm -rf /etc/weewx/skins/LCARS
-sudo ln -s /usr/lib/weewx/skins/LCARS /etc/weewx/skins/LCARS
-```
-
-Future `weectl extension install` upgrades will then update `<WEEWX_ROOT>/skins/LCARS` in place and both `CheetahGenerator` and `CopyGenerator` will stay in sync.
-
-The WeeWX service runs as its own user (usually `weewx`). Make sure it owns the output folder, and run any manual report as that user, from a directory it can enter:
-
-```
-sudo chown -R weewx:weewx /var/lib/weewx/www/lcars        # use your HTML_ROOT
-cd /tmp && sudo -u weewx weectl report run LCARSReport
-```
-
-Running `weectl report run` with plain `sudo` creates root-owned files, and the service then fails every cycle with `Permission denied`. Check `journalctl -u weewx | grep LCARSReport` if pages stop updating.
-
-### Upgrading
-
-Install the new release zip directly **without** running `weectl extension uninstall` first (uninstalling removes `[[LCARSReport]]` from `weewx.conf`, whereas installing in place preserves your `[[[Extras]]]` overrides):
-
-```
-sudo weectl extension install weewx-lcars-<version>.zip
-sudo systemctl restart weewx
-```
-
-To regenerate the pages immediately without waiting for the next archive cycle:
-
-```
-cd /tmp && sudo -u weewx weectl report run LCARSReport
-```
-
-If your site sits behind a caching proxy or CDN (such as Cloudflare) and styling or script changes do not appear after upgrading, purge the cached `lcars.css` and `lcars.js` files.
-
-### Make LCARS the front page
-
-Point your web server at the `HTML_ROOT` folder and redirect `/` to `/lcars/`. With Caddy:
-
-```
-:8080 {
-    root * /var/lib/weewx/www
-    redir / /lcars/
-    file_server
-}
-```
+See the [FAQ](#faq) for immediate page generation, making LCARS the front page, distro-specific skin paths, uninstalling, and troubleshooting.
 
 ## Settings
 
@@ -116,13 +63,95 @@ Narrow screens (`<= 860px`) switch from the left rail to a slim top LCARS elbow 
 
 `manifest.webmanifest` and `sw.js` enable Progressive Web App installation on iOS and Android (Add to Home Screen / Install app) with offline shell caching and automatic stale-data refresh on resume. Service workers and browser install prompts require serving the site over **HTTPS** (or `localhost` for testing).
 
-## Development
+## FAQ
+
+### How do I regenerate pages right away?
+
+Without waiting for the next archive cycle:
+
+```bash
+cd /tmp && sudo -u weewx weectl report run LCARSReport
+```
+
+*(For a `pip` / virtual environment install, activate your venv and run `weectl report run LCARSReport` as your own user.)*
+
+### How do I make LCARS the front page?
+
+Point your web server at the `HTML_ROOT` folder and redirect `/` to `/lcars/`. With Caddy:
 
 ```
+:8080 {
+    root * /var/lib/weewx/www
+    redir / /lcars/
+    file_server
+}
+```
+
+### How do I install a specific release, offline zip, or the main branch?
+
+Pass a tagged release URL, a local zip downloaded from [Releases](https://github.com/kc9wwh/weewx-lcars/releases), or the `main` branch archive directly to `weectl extension install`:
+
+```bash
+# Specific release
+sudo weectl extension install https://github.com/kc9wwh/weewx-lcars/releases/download/v<version>/weewx-lcars-<version>.zip
+
+# Local / offline zip
+sudo weectl extension install weewx-lcars-<version>.zip
+
+# Latest unreleased commit on main
+sudo weectl extension install https://github.com/kc9wwh/weewx-lcars/archive/refs/heads/main.zip
+```
+
+### WeeWX didn't find the LCARS skin after installing (Arch / custom package installs)
+
+`weectl extension install` copies skins into `<WEEWX_ROOT>/skins`, but some packages read skins from somewhere else. Check that the folder ended up where WeeWX looks:
+
+```bash
+grep -nE '^\s*(WEEWX_ROOT|SKIN_ROOT|HTML_ROOT)' /etc/weewx/weewx.conf
+ls -d /usr/share/weewx/skins/* /etc/weewx/skins/* /usr/lib/weewx/skins/* 2>/dev/null
+```
+
+If `LCARS` landed somewhere other than `[StdReport]`'s `SKIN_ROOT`, symlink it into `[StdReport]`'s `SKIN_ROOT` (instead of setting a per-report `SKIN_ROOT` under `[[LCARSReport]]`, which WeeWX's `CheetahGenerator` ignores when reading `skin.conf` and `.tmpl` files):
+
+```bash
+# Example when WEEWX_ROOT is /usr/lib/weewx and [StdReport] SKIN_ROOT is /etc/weewx/skins
+sudo rm -rf /etc/weewx/skins/LCARS
+sudo ln -s /usr/lib/weewx/skins/LCARS /etc/weewx/skins/LCARS
+```
+
+Future `weectl extension install` upgrades will then update `<WEEWX_ROOT>/skins/LCARS` in place and both `CheetahGenerator` and `CopyGenerator` will stay in sync.
+
+### Pages stopped updating or logs show Permission denied
+
+The WeeWX service runs as its own user (usually `weewx`). Running `weectl report run` with plain `sudo` creates root-owned files, and the service then fails every cycle with `Permission denied`. Check `journalctl -u weewx | grep LCARSReport`, then make sure `weewx` owns the output folder and run any manual report as that user, from a directory it can enter:
+
+```bash
+sudo chown -R weewx:weewx /var/lib/weewx/www/lcars        # use your HTML_ROOT
+cd /tmp && sudo -u weewx weectl report run LCARSReport
+```
+
+### CSS or script changes don't appear after upgrading
+
+If your site sits behind a caching proxy or CDN (such as Cloudflare) and styling or script changes do not appear after upgrading, purge the cached `lcars.css` and `lcars.js` files.
+
+### How do I uninstall?
+
+```bash
+sudo weectl extension uninstall lcars
+sudo systemctl restart weewx
+```
+
+*(For a `pip` / virtual environment install, activate your venv and omit `sudo`.)*
+
+This removes the installed skin files and the `[[LCARSReport]]` section from `weewx.conf`. Generated HTML files under `<HTML_ROOT>/lcars` can be deleted manually if no longer needed.
+
+## Development
+
+```bash
 pip install weewx                    # any WeeWX 5.x
 scripts/test-render.sh               # builds a simulator station, renders every page, validates the output
 python3 -m http.server -d <printed output path> 8000   # preview in a browser
-scripts/build.sh                     # dist/weewx-lcars-<version>.zip
+scripts/build.sh                     # dist/weewx-lcars-<version>.zip and dist/weewx-lcars.zip
 ```
 
 `test-render.sh` runs on every push via GitHub Actions against several WeeWX versions; the rendered site is attached to each run as an artifact.
@@ -156,7 +185,7 @@ Template notes: WeeWX's `$obs.label` needs `[key]` access, while `$unit.label` a
 
 1. Bump `VERSION` in `install.py` and `SKIN_VERSION` in `skins/LCARS/skin.conf`, and add a `CHANGELOG.md` entry.
 2. Tag and push: `git tag v0.2.0 && git push --tags`.
-3. The Release workflow runs the render test, builds the zip and attaches it to a GitHub release.
+3. The Release workflow runs the render test, builds both zips (`weewx-lcars-<version>.zip` and `weewx-lcars.zip`), and attaches them to a GitHub release.
 
 ## Data sources
 

@@ -62,7 +62,7 @@ Use this skill when cutting or re-tagging a `weewx-lcars` release.
    ```bash
    scripts/build.sh "<version>"
    ```
-   Confirm it exits `0` and reports `Built dist/weewx-lcars-<version>.zip`.
+   Confirm it exits `0` and reports `Built dist/weewx-lcars-<version>.zip and dist/weewx-lcars.zip`.
 2. Review the diff and working tree:
    ```bash
    git status -s

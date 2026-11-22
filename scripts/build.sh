@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the installable extension zip:  scripts/build.sh  ->  dist/weewx-lcars-<version>.zip
-# Install it with:  sudo weectl extension install dist/weewx-lcars-<version>.zip
+# Build the installable extension zips:  scripts/build.sh  ->  dist/weewx-lcars-<version>.zip & dist/weewx-lcars.zip
+# Install it with:  sudo weectl extension install dist/weewx-lcars.zip
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -18,6 +18,7 @@ trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/weewx-lcars" dist
 cp -r install.py README.md LICENSE skins "$STAGE/weewx-lcars/"
 find "$STAGE" -name '.DS_Store' -delete
-rm -f "dist/weewx-lcars-$VERSION.zip"
+rm -f "dist/weewx-lcars-$VERSION.zip" dist/weewx-lcars.zip
 (cd "$STAGE" && zip -qr "$OLDPWD/dist/weewx-lcars-$VERSION.zip" weewx-lcars)
-echo "Built dist/weewx-lcars-$VERSION.zip"
+cp "dist/weewx-lcars-$VERSION.zip" dist/weewx-lcars.zip
+echo "Built dist/weewx-lcars-$VERSION.zip and dist/weewx-lcars.zip"
