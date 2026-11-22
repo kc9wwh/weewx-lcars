@@ -2,6 +2,8 @@
 
 An LCARS-style skin for [WeeWX](https://weewx.com) 5, built on the Titan.DS color palette: slate and gunmetal frames, steel-blue and peach accents, sky-blue linework, and a red alert that follows real weather warnings.
 
+![LCARS Console](docs/screenshots/console.png)
+
 | Page | What it shows |
 |---|---|
 | `index.html` | Console: slider gauges for temperature, humidity, wind and rain, additional sensors, 3-day forecast, last-24-hour charts |
@@ -26,6 +28,38 @@ sudo systemctl restart weewx
 The installer adds a `[[LCARSReport]]` section to `weewx.conf` that writes the site to an `lcars` folder inside your `HTML_ROOT` alongside your existing skin. When upgrading, install directly **without** running `weectl extension uninstall` first so your `[[[Extras]]]` overrides in `weewx.conf` are preserved.
 
 See the [FAQ](#faq) for immediate page generation, making LCARS the front page, distro-specific skin paths, uninstalling, and troubleshooting.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <img src="docs/screenshots/radar.png" alt="Sensor sweep radar scope" />
+      <br />
+      <sub><b>Radar</b> (<code>radar.html</code>) — NEXRAD scope, wind vector, solar track</sub>
+    </td>
+    <td align="center" valign="top" width="50%">
+      <img src="docs/screenshots/kiosk.jpg" alt="16:9 wall display kiosk view" />
+      <br />
+      <sub><b>Wall Display</b> (<code>kiosk.html</code>) — 16:9 segmented meters and live clock</sub>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/history.png" alt="Consolidated history and climate matrices" width="445" />
+      <br />
+      <sub><b>History &amp; Archive</b> (<code>history.html</code>) — all-time extremes, climate matrices, NOAA logs</sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/mobile.png" alt="Mobile LCARS console view" width="206" />
+      <br />
+      <sub><b>Mobile Console</b> (<code>index.html</code>) — narrow-screen layout and bottom dock</sub>
+    </td>
+  </tr>
+</table>
 
 ## Settings
 
