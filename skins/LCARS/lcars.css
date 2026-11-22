@@ -141,7 +141,7 @@ body.alert-red .alert-banner { background: var(--red); }
 .console-head .kicker { font-size: 16px; letter-spacing: 0.24em; color: var(--mist); }
 .console-head h1 { margin: 0; font-size: clamp(44px, 6vw, 72px); font-weight: 600; letter-spacing: 0.04em; line-height: 1; color: var(--accent); }
 .console-head .clock { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; text-align: right; }
-.console-head .time { font-size: 48px; line-height: 1; color: var(--text); }
+.console-head .time { font-size: 48px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
 .console-head .when { font-size: 17px; color: var(--mist); letter-spacing: 0.16em; }
 
 .dots { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 12px; background: var(--charcoal); }
@@ -323,7 +323,7 @@ body.alert-red .stage .k-banner { background: var(--red); color: #000; }
 .stage aside { flex: 0 0 330px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .stage .k-clock { background: var(--panel); padding: 14px 16px; }
 .stage .k-clock .kicker { font-size: 15px; letter-spacing: 0.22em; color: var(--accent); }
-.stage .k-clock .t { font-size: 64px; line-height: 1; font-weight: 600; }
+.stage .k-clock .t { font-size: 64px; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
 .stage .k-clock .d { font-size: 16px; color: var(--mist); letter-spacing: 0.12em; }
 .stage .k-fc { display: flex; flex-direction: column; gap: 12px; }
 .stage .k-fc .fc { flex: none; height: 74px; }

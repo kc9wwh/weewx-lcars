@@ -332,7 +332,19 @@
     svg.querySelector('.daylen').textContent = 'DAYLIGHT ' + hours(len).toUpperCase();
   }
 
-  /* ---------- wall display ---------- */
+  /* ---------- live clock & wall display ---------- */
+
+  function liveClock() {
+    var clocks = document.querySelectorAll('[data-clock]');
+    if (!clocks.length) return;
+    function tick() {
+      var d = new Date();
+      var s = [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return (n < 10 ? '0' : '') + n; }).join(':');
+      clocks.forEach(function (c) { c.textContent = s; });
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
 
   function kiosk() {
     var stage = document.getElementById('stage');
@@ -348,13 +360,6 @@
     fit();
     window.addEventListener('resize', fit);
     window.addEventListener('orientationchange', fit);
-    var clock = document.querySelector('[data-clock]');
-    if (clock) {
-      setInterval(function () {
-        var d = new Date();
-        clock.textContent = [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return (n < 10 ? '0' : '') + n; }).join(':');
-      }, 1000);
-    }
     setTimeout(function () { window.location.reload(); }, Math.max(60, cfg.kioskRefresh || 300) * 1000);
   }
 
@@ -673,6 +678,7 @@
   function boot() {
     gauges();
     meters();
+    liveClock();
     kiosk();
     solar();
     radar();

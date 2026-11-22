@@ -24,8 +24,8 @@
 </div>
 <div class="clock">
 <span class="dots" role="img" aria-label="$sum($status) of $len($status) sensors reporting">#for $i, $s in enumerate($status)#<i class="$('' if $s else 'off')"></i>#if $i % 4 == 3#<i class="gap"></i>#end if##end for#</span>
-<div class="time">$current.dateTime.format("%H:%M:%S")</div>
-<div class="when">$current.dateTime.format("%d.%m.%Y") • Sunrise $almanac.sunrise.format("%H:%M") • Sunset $almanac.sunset.format("%H:%M")</div>
+<div class="time" data-clock>$current.dateTime.format("%H:%M:%S")</div>
+<div class="when">$current.dateTime.format("%d.%m.%Y") • Data $current.dateTime.format("%H:%M") • Sunrise $almanac.sunrise.format("%H:%M") • Sunset $almanac.sunset.format("%H:%M")</div>
 </div>
 </header>
 
