@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2026-11-22)
+
+- Added a knockout GitHub Invertocat logo hyperlink back to the `weewx-lcars` repository in the shared page footer and wall display (`kiosk.html`) footer.
+- Built a versionless `weewx-lcars.zip` alongside `weewx-lcars-<version>.zip` on each release and simplified `README.md` install and upgrade instructions with a direct GitHub release URL and dedicated FAQ.
+
 ## 0.3.1 (2026-11-22)
 
 - Made the clock on the Radar page (`radar.html`) tick live like the Current console and wall display, with the last station reading time shown in the header subtitle.
