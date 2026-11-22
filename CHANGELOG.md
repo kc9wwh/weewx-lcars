@@ -3,6 +3,7 @@
 ## 0.3.2 (2026-11-22)
 
 - Added a knockout GitHub Invertocat logo hyperlink back to the `weewx-lcars` repository in the shared page footer and wall display (`kiosk.html`) footer.
+- Appended `?v=$SKIN_VERSION` cache-busting to `lcars.css` and `lcars.js` (and rotated the service worker shell cache to `lcars-shell-v2`) so upgrades load updated assets automatically without manual cache purges.
 - Built a versionless `weewx-lcars.zip` alongside `weewx-lcars-<version>.zip` on each release and simplified `README.md` install and upgrade instructions with a direct GitHub release URL and dedicated FAQ.
 
 ## 0.3.1 (2026-11-22)

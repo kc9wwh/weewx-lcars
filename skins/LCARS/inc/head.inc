@@ -9,4 +9,4 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="lcars.css">
+<link rel="stylesheet" href="lcars.css?v=$SKIN_VERSION">

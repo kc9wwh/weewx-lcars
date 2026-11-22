@@ -117,6 +117,6 @@
 #include "inc/charts.inc"
 #include "inc/config.inc"
 <script src="vendor/apexcharts.min.js" defer></script>
-<script src="lcars.js" defer></script>
+<script src="lcars.js?v=$SKIN_VERSION" defer></script>
 </body>
 </html>

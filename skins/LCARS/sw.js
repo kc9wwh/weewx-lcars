@@ -2,7 +2,7 @@
  * Network-first for live weather HTML/CSS/JS/data; cache-first for static bundled assets. */
 'use strict';
 
-var SHELL_CACHE = 'lcars-shell-v1';
+var SHELL_CACHE = 'lcars-shell-v2';
 var RUNTIME_CACHE = 'lcars-runtime-v1';
 
 var SHELL_ASSETS = [
@@ -92,7 +92,9 @@ self.addEventListener('fetch', function (event) {
       }
       return res;
     }).catch(function () {
-      return caches.match(req, { ignoreSearch: true }).then(function (hit) {
+      return caches.match(req).then(function (exact) {
+        return exact || caches.match(req, { ignoreSearch: true });
+      }).then(function (hit) {
         if (hit) return hit;
         if (req.mode === 'navigate') {
           return caches.match('./index.html').then(function (idx) {
