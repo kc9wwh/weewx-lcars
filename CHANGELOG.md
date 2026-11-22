@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-11-22)
+
+- Added mobile-first LCARS layout (`<= 860px` / `<= 640px`): slim `WX·01` top elbow bar, compact side-by-side header, 2×2 primary reading grid, single-row wire-connected additional sensors, radar-first sweep ordering with compact side-by-side wind rose and stats, mobile period switcher (`Yesterday`, `Week`, `Month`, `Year`), full-screen NOAA report viewer, and fixed 5-tab bottom navigation dock with slide-up Auxiliary Consoles drawer (`More`).
+- Added Progressive Web App (PWA) support: generated `manifest.webmanifest` (relative paths, shortcuts, optional `pwa_short_name`), Titan.DS PNG icon set (`192`, `512`, maskable `512`, Apple touch icon), WeeWX-aware service worker (`sw.js`: network-first for live HTML/CSS/JS/data, cache-first for bundled assets), offline banner, in-drawer install prompt / iOS hint, and automatic stale-data refresh on resume.
+- Made the clock on the Current console (`index.html`) tick live like the wall display, with the last station reading time displayed in the header subtitle and `tabular-nums` digit alignment.
+- Added portrait phone mode for the wall display (`kiosk.html`) with scrollable 3×2 vertical segmented meters, fixed centered 16:9 stage scaling on smaller landscape viewports, and adjusted desktop `.sensors` flex-basis to prevent horizontal overflow at 1440px.
+
 ## 0.2.0 (2026-11-22)
 
 - Added consolidated LCARS History & Archive console (`history.html`) replacing external `archive_url` and `history_url` links with a single native `History` nav item: all-time recorded extremes, interactive Titan.DS heat-tinted monthly climate matrices (high/avg/low temperature, rainfall, rain days, peak gust), year-by-year archive directory, and monthly/daily historical trend charts.
