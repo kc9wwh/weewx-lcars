@@ -80,11 +80,12 @@ a { color: var(--sky); }
 
 /* ---------- frame ---------- */
 
-.frame { max-width: 1480px; margin: 0 auto; display: flex; gap: var(--gap); min-height: calc(100vh - 32px); }
+body.lcars:not(.kiosk) { min-height: 100vh; display: flex; flex-direction: column; }
+.frame { width: 100%; max-width: 1480px; margin: 0 auto; display: flex; gap: var(--gap); flex: 1 0 auto; }
 .rail { flex: 0 0 calc(var(--rail-w) + 60px); display: flex; flex-direction: column; gap: var(--gap); }
 .main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
 
-.elbow { position: relative; height: 120px; background: var(--rail); color: var(--rail-text); font-size: 15px; letter-spacing: 0.12em; }
+.elbow { position: relative; height: 120px; flex-shrink: 0; background: var(--rail); color: var(--rail-text); font-size: 15px; letter-spacing: 0.12em; }
 .elbow span { position: absolute; left: 28px; }
 .elbow-top { border-top-left-radius: 80px; }
 .elbow-top span { bottom: 10px; }
@@ -96,7 +97,7 @@ a { color: var(--sky); }
 .rail-nav { width: var(--rail-w); display: flex; flex-direction: column; gap: var(--gap); }
 .rail-fill { width: var(--rail-w); flex: 1 1 auto; min-height: 100px; background: var(--frame); color: var(--mist); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 14px 10px; font-size: 15px; letter-spacing: 0.12em; }
 
-.bar { display: flex; gap: var(--gap); height: var(--bar); }
+.bar { display: flex; gap: var(--gap); height: var(--bar); flex-shrink: 0; }
 .bar > * { background: var(--frame); }
 .bar .s-rail { flex: 3; background: var(--rail); }
 .bar .s-peach { flex: 0 0 140px; background: var(--b-peach); }
@@ -196,6 +197,7 @@ body.alert-red .alert-banner { background: var(--red); }
 .fc .temps { font-size: 34px; font-weight: 600; }
 .fc .meta { font-size: 16px; color: var(--dim); letter-spacing: 0.06em; }
 .credit { font-size: 14px; color: var(--dim); letter-spacing: 0.06em; text-transform: none; margin: 10px 0 0; }
+.credit.frame-credit { width: 100%; max-width: 1480px; margin: 10px auto 0; padding-left: calc(var(--rail-w) + 60px + var(--gap)); }
 
 /* ---------- charts ---------- */
 
@@ -333,7 +335,8 @@ body.alert-red .stage .k-banner { background: var(--red); color: #000; }
 /* ---------- small screens ---------- */
 
 @media (max-width: 860px) {
-  .frame { flex-direction: column; min-height: 0; }
+  .frame { flex-direction: column; flex: none; }
+  .credit.frame-credit { padding-left: 0; }
   .rail { flex: none; }
   .elbow, .rail-fill { display: none; }
   .rail-nav { width: auto; flex-direction: row; flex-wrap: wrap; }
