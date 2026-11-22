@@ -1,0 +1,92 @@
+## LCARS skin: 16:9 wall display
+#set global $page = 'kiosk'
+#include "inc/setup.inc"
+#set $scales = {'outTemp': 'temp', 'dewpoint': 'temp', 'windchill': 'temp', 'heatindex': 'temp', 'appTemp': 'temp', 'inTemp': 'temp', 'outHumidity': 'pct', 'inHumidity': 'pct', 'windSpeed': 'speed', 'windGust': 'speed', 'rain': 'rain', 'cloudbase': 'altitude', 'barometer': 'pressure', 'pressure': 'pressure', 'altimeter': 'pressure'}
+<!doctype html>
+<html lang="en">
+<head>
+#include "inc/head.inc"
+<title>$stn · Wall display</title>
+</head>
+<body class="lcars kiosk">
+<div class="stage" id="stage">
+
+<div class="k-rail">
+<div class="k-elbow top" aria-hidden="true"><span>ENG • WX</span></div>
+<a class="btn c-peach" href="index.html">Console</a>
+<a class="btn c-lav" href="radar.html">Radar</a>
+<a class="btn c-coral" href="week.html">Week</a>
+<a class="btn c-mist" href="year.html">Year</a>
+<div class="k-cond" data-cond-label>Nominal</div>
+<div class="k-elbow bottom" aria-hidden="true"><span>Alt $station.altitude</span></div>
+</div>
+
+<div class="k-main">
+<div class="k-top">
+<div class="k-banner" data-kiosk-banner role="status">All atmospheric sensors nominal</div>
+<span class="dots" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i class="gap"></i><i></i><i class="gap"></i><i></i><i></i><i class="gap"></i><i></i><i></i><i></i><i></i></span>
+<i class="cap" aria-hidden="true"></i>
+</div>
+
+<div class="k-body">
+<section class="meters" aria-label="Sensor meters">
+#for $i, $o in enumerate($kiosk_meters)
+#if $o == 'rain'
+#set $val = $day.rain.sum.formatted
+#set $raw = $day.rain.sum.raw
+#set $pk = ''
+#set $note = 'Today'
+#set $label = $obs.label.rain
+#elif $o == 'windSpeed'
+#set $val = $current.windSpeed.formatted
+#set $raw = $current.windSpeed.raw
+#set $pk = $day.windGust.max.raw
+#set $note = 'Gust ' + str($day.windGust.max.formatted)
+#set $label = $obs.label.windSpeed
+#else
+#try
+#set $val = $getattr($current, $o).formatted
+#set $raw = $getattr($current, $o).raw
+#set $pk = $getattr($day, $o).max.raw
+#set $note = 'Hi ' + str($getattr($day, $o).max.formatted)
+#except
+#set $val = 'N/A'
+#set $raw = ''
+#set $pk = ''
+#set $note = ''
+#end try
+#set $label = $obs.label[$o]
+#end if
+<div class="meter m$i" data-scale="$scales.get($o, 'pct')" data-unit="$getattr($unit.unit_type, $o)" data-v="$raw" data-peak="$pk"#if $o == 'rain'# data-peak-source="forecast"#end if#>
+<div class="m-head">$label</div>
+<div class="m-body">
+<div class="m-scale" aria-hidden="true"><span data-max></span><span data-min></span></div>
+<div class="m-segs" aria-hidden="true"><i class="m-tick"></i><i class="m-knob"></i></div>
+</div>
+<div class="m-val">$val</div>
+<div class="m-note" data-note>$getattr($unit.label, $o).strip() • $note</div>
+</div>
+#end for
+</section>
+
+<aside>
+<div class="k-clock">
+<div class="kicker">$stn · data $current.dateTime.format("%H:%M")</div>
+<div class="t" data-clock>$current.dateTime.format("%H:%M:%S")</div>
+<div class="d">$current.dateTime.format("%a %d.%m.%Y") • Rise $almanac.sunrise.format("%H:%M") • Set $almanac.sunset.format("%H:%M")</div>
+</div>
+#if $fc_on
+<div class="k-fc" data-forecast="kiosk"></div>
+#end if
+<div class="k-foot">$station.hardware • Station up $station.uptime.long_form<br>WeeWX $station.version#if $fc_on# • Forecast by Open-Meteo.com (CC BY 4.0)#end if#</div>
+</aside>
+</div>
+
+<div class="k-bottom" aria-hidden="true"><i class="s-rail"></i><i class="s-peach"></i><span class="dots"><i></i><i></i><i class="gap"></i><i></i><i></i><i></i><i class="off"></i><i class="gap"></i><i></i><i class="gap"></i><i></i><i></i><i></i><i class="gap"></i><i class="off"></i><i></i><i class="gap"></i><i></i></span><i class="s-coral"></i><i class="cap"></i></div>
+</div>
+
+</div>
+#include "inc/config.inc"
+<script src="lcars.js" defer></script>
+</body>
+</html>

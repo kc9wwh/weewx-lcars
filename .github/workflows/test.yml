@@ -1,0 +1,28 @@
+name: Render test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        weewx: ["5.1.0", "5.5.2", "5.6.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install WeeWX ${{ matrix.weewx }}
+        run: pip install "weewx==${{ matrix.weewx }}"
+      - name: Render every page against a simulator station
+        run: WORK=$RUNNER_TEMP/lcars scripts/test-render.sh
+      - name: Upload rendered site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-site-weewx-${{ matrix.weewx }}
+          path: ${{ runner.temp }}/lcars/station/public_html/lcars
+          if-no-files-found: ignore

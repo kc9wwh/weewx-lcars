@@ -1,0 +1,161 @@
+## LCARS skin: radar scope (sensor sweep)
+#set global $page = 'radar'
+#include "inc/setup.inc"
+#set $rr = $Extras.get('radar_rings', ['5', '10', '15', '20'])
+#set $rings = [float(x) for x in ([$rr] if isinstance($rr, str) else $rr)]
+#set $ring_unit = $Extras.get('radar_ring_unit', 'mi')
+#set $btns = ['c-lav', 'c-dark', 'c-mist', 'c-slate', 'c-lav', 'c-frame', 'c-mist']
+<!doctype html>
+<html lang="en">
+<head>
+#include "inc/head.inc"
+<link rel="stylesheet" href="vendor/leaflet.css">
+<title>$stn · Radar</title>
+</head>
+#include "inc/frame_open.inc"
+<header class="console-head">
+<div>
+<div class="kicker">Sensor sweep</div>
+<h1>$stn</h1>
+</div>
+<div class="clock">
+<div class="time">$current.dateTime.format("%H:%M")</div>
+<div class="when">$current.dateTime.format("%d.%m.%Y") • Radar refreshes every 5 minutes</div>
+</div>
+</header>
+
+<main class="content" id="content">
+<div class="sweep">
+
+<section class="wind" aria-labelledby="h-wind">
+<div class="sect" style="margin-bottom:0"><i class="cap c-dark"></i><h2 class="label c-dark" id="h-wind" style="flex:1">Wind vector</h2></div>
+<svg class="rose" viewBox="0 0 260 260" role="img" aria-label="Wind from $current.windDir.ordinal_compass at $current.windSpeed">
+<circle cx="130" cy="130" r="112" fill="#0c1319" stroke="#78c0e8" stroke-width="3"/>
+<circle cx="130" cy="130" r="80" fill="none" stroke="#243c50" stroke-width="1.5" stroke-dasharray="3 5"/>
+<g stroke="#3e6f92" stroke-width="2">
+<line x1="130" y1="18" x2="130" y2="32"/><line x1="130" y1="228" x2="130" y2="242"/>
+<line x1="18" y1="130" x2="32" y2="130"/><line x1="228" y1="130" x2="242" y2="130"/>
+<line x1="51" y1="51" x2="60" y2="60"/><line x1="209" y1="51" x2="200" y2="60"/>
+<line x1="51" y1="209" x2="60" y2="200"/><line x1="209" y1="209" x2="200" y2="200"/>
+</g>
+<g fill="#98a0b8" font-family="Antonio, Arial Narrow, sans-serif" font-size="16" text-anchor="middle">
+<text x="130" y="52">N</text><text x="130" y="220">S</text><text x="48" y="136">W</text><text x="212" y="136">E</text>
+</g>
+#if $current.windDir.has_data
+#set $wd = int(round($current.windDir.raw))
+<g class="needle" style="--from: ${wd}deg">
+<line x1="130" y1="130" x2="130" y2="41" stroke="#f29d7d" stroke-width="6" stroke-linecap="round"/>
+<circle cx="130" cy="41" r="9" fill="#f29d7d"/>
+</g>
+#end if
+<circle cx="130" cy="130" r="6" fill="#98a0b8"/>
+</svg>
+<div class="windspeed">$current.windSpeed.formatted<small>$unit.label.windSpeed.strip() from $current.windDir.ordinal_compass</small></div>
+<div class="wind-row"><span>Average</span><span>$day.windSpeed.avg</span></div>
+<div class="gauge sm" aria-hidden="true" data-scale="speed" data-unit="$unit.unit_type.windSpeed" data-v="$day.windSpeed.avg.raw"><i class="track"></i><i class="fill"></i><i class="knob"></i></div>
+<div class="wind-row"><span>Peak gust</span><span>$day.windGust.max · $day.windGust.maxtime.format("%H:%M")</span></div>
+<div class="gauge sm" aria-hidden="true" data-scale="speed" data-unit="$unit.unit_type.windSpeed" data-v="$day.windGust.max.raw"><i class="track"></i><i class="fill"></i><i class="knob"></i></div>
+<div class="wind-scale" data-scale-labels="speed" data-unit="$unit.unit_type.windSpeed"><span></span><span></span><span></span></div>
+#if $day.windrun.has_data
+<div class="wind-row wind-run"><span>Wind run</span><span>$day.windrun.sum</span></div>
+#end if
+</section>
+
+<section class="scope-wrap" aria-labelledby="h-scope">
+<div class="bracket" aria-hidden="true"><i class="c-peach" style="height:80px"></i><i class="grow"></i><i class="c-lav" style="height:40px"></i><i class="c-dark" style="height:80px"></i></div>
+<div class="scope-col">
+<h2 class="kicker" id="h-scope" style="margin:0;font-weight:400">Area overlay · rings every $('%g' % $rings[0]) $ring_unit</h2>
+<div class="scope">
+<div class="scope-map" id="scope-map" role="img" aria-label="Weather radar around the station"></div>
+<svg class="scope-overlay" viewBox="0 0 600 600" aria-hidden="true">
+<g stroke="#243c50" stroke-width="1.5"><line x1="10" y1="300" x2="590" y2="300"/><line x1="300" y1="10" x2="300" y2="590"/></g>
+<g class="sweep-arm">
+<path d="M300 300 L300 10 A290 290 0 0 1 445 49 Z" fill="#78c0e8" opacity="0.16"/>
+<line x1="300" y1="300" x2="300" y2="10" stroke="#78c0e8" stroke-width="2" opacity="0.9"/>
+</g>
+#if $current.windDir.has_data
+#set $wt = int(round($current.windDir.raw + 180)) % 360
+<g class="downwind" style="--to: ${wt}deg">
+<line x1="300" y1="300" x2="300" y2="222" stroke="#f29d7d" stroke-width="4" stroke-linecap="round"/>
+<polygon points="300,206 289,228 311,228" fill="#f29d7d"/>
+</g>
+#end if
+<rect x="292" y="292" width="16" height="16" fill="#f29d7d" transform="rotate(45 300 300)"/>
+<g fill="#98a0b8" font-family="Antonio, Arial Narrow, sans-serif" font-size="22" text-anchor="middle">
+<text x="300" y="40">N</text><text x="300" y="582">S</text><text x="26" y="307">W</text><text x="574" y="307">E</text>
+</g>
+</svg>
+</div>
+<p class="credit">Rings at $(', '.join(('%g' % r) for r in $rings)) $ring_unit · arrow shows where the wind is blowing to<br>Radar: $Extras.get('radar_attribution', '') · Map: $Extras.get('basemap_attribution', '') · <a href="https://leafletjs.com">Leaflet</a></p>
+</div>
+<div class="bracket" aria-hidden="true"><i class="c-dark" style="height:120px"></i><i class="grow"></i><i class="c-coral" style="height:60px"></i></div>
+</section>
+
+<section class="readouts" aria-label="Sensor readings">
+#set $n = 0
+#for $o in ['outTemp', 'outHumidity'] + [x for x in $secondary if x not in ('outTemp', 'outHumidity')]
+#try
+#set $c = $getattr($current, $o)
+#set $ok = $c.has_data
+#except
+#set $ok = False
+#end try
+#if $ok
+#set $d = $getattr($day, $o)
+<div class="readout$(' is-hot' if $o == 'outTemp' else '')">
+<div class="val"><b>$c.formatted<small>$getattr($unit.label, $o).strip()</small></b><span>$d.min.formatted – $d.max.formatted</span></div>
+<i class="wire" aria-hidden="true"></i>
+<span class="btn $('c-peach' if $o == 'outTemp' else $btns[$n % len($btns)])">$obs.label[$o]</span>
+</div>
+#set $n = $n + 1
+#end if
+#end for
+<div class="readout">
+<div class="val"><b>$day.rain.sum.formatted<small>$unit.label.rain.strip()</small></b><span>Rate $current.rainRate</span></div>
+<i class="wire" aria-hidden="true"></i>
+<span class="btn c-coral">$obs.label.rain</span>
+</div>
+</section>
+
+</div>
+
+<div class="lower">
+<section aria-labelledby="h-solar">
+<div class="sect"><i class="cap c-mist"></i><h2 class="label c-mist" id="h-solar">Solar track</h2><i class="fill"></i></div>
+<svg class="solar" viewBox="0 0 600 180" role="img" aria-label="Sunrise $almanac.sunrise.format('%H:%M'), sunset $almanac.sunset.format('%H:%M')" data-rise="$almanac.sunrise.raw" data-set="$almanac.sunset.raw">
+<line x1="20" y1="150" x2="580" y2="150" stroke="#243c50" stroke-width="2"/>
+<path d="M40 150 A260 120 0 0 1 560 150" fill="none" stroke="#313749" stroke-width="3" stroke-dasharray="6 6"/>
+<path class="done" d="M40 150" fill="none" stroke="#f29d7d" stroke-width="5"/>
+<circle class="sun" r="11" fill="#ef7257" cx="0" cy="0"/>
+<g font-family="Antonio, Arial Narrow, sans-serif" font-size="18" fill="#98a0b8">
+<text x="20" y="175">RISE $almanac.sunrise.format("%H:%M")</text>
+<text x="580" y="175" text-anchor="end">SET $almanac.sunset.format("%H:%M")</text>
+<text class="daylen" x="300" y="140" text-anchor="middle" fill="#d6d9e4"></text>
+</g>
+</svg>
+</section>
+#if $fc_on
+<section aria-labelledby="h-fc">
+<div class="sect"><i class="cap c-peach"></i><h2 class="label c-peach" id="h-fc">Projection</h2><i class="fill"></i><i class="end"></i></div>
+<div class="forecast" data-forecast="compact"><p class="empty">Loading forecast</p></div>
+</section>
+#end if
+</div>
+
+</main>
+#include "inc/frame_close.inc"
+#include "inc/config.inc"
+<script type="application/json" id="wx-radar">
+{
+  "rings": [$(', '.join(('%g' % r) for r in $rings))],
+  "ringUnit": "$ring_unit",
+  "radarTiles": "$Extras.get('radar_tiles', '')",
+  "radarAttribution": "$Extras.get('radar_attribution', '')",
+  "basemapTiles": "$Extras.get('basemap_tiles', '')",
+  "basemapAttribution": "$Extras.get('basemap_attribution', '')"
+}
+</script>
+<script src="vendor/leaflet.js" defer></script>
+<script src="lcars.js" defer></script>
+</body>
+</html>

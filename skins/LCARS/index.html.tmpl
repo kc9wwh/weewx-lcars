@@ -1,0 +1,122 @@
+## LCARS skin: current conditions console
+#set global $page = 'index'
+#include "inc/setup.inc"
+#set $btns = ['c-lav', 'c-slate', 'c-dark', 'c-frame', 'c-mist', 'c-lav', 'c-slate']
+#set $status = []
+#for $o in ['outTemp', 'outHumidity', 'windSpeed', 'rain'] + $secondary
+#try
+#silent $status.append($getattr($current, $o).has_data)
+#except
+#silent $status.append(False)
+#end try
+#end for
+<!doctype html>
+<html lang="en">
+<head>
+#include "inc/head.inc"
+<title>$stn · Current</title>
+</head>
+#include "inc/frame_open.inc"
+<header class="console-head">
+<div>
+<div class="kicker">Atmospheric sensor array</div>
+<h1>$stn</h1>
+</div>
+<div class="clock">
+<span class="dots" role="img" aria-label="$sum($status) of $len($status) sensors reporting">#for $i, $s in enumerate($status)#<i class="$('' if $s else 'off')"></i>#if $i % 4 == 3#<i class="gap"></i>#end if##end for#</span>
+<div class="time">$current.dateTime.format("%H:%M:%S")</div>
+<div class="when">$current.dateTime.format("%d.%m.%Y") • Sunrise $almanac.sunrise.format("%H:%M") • Sunset $almanac.sunset.format("%H:%M")</div>
+</div>
+</header>
+
+<main class="content" id="content">
+
+<section class="readings" aria-label="Primary readings">
+
+<article class="reading">
+<div class="head"><i class="cap c-peach"></i><h2 class="label c-peach">$obs.label.outTemp</h2></div>
+<div class="big">$current.outTemp.formatted<small>$unit.label.outTemp</small></div>
+<div class="gauge" aria-hidden="true" data-scale="temp" data-unit="$unit.unit_type.outTemp" data-v="$current.outTemp.raw" data-lo="$day.outTemp.min.raw" data-hi="$day.outTemp.max.raw"><i class="track"></i><i class="fill"></i><i class="band"></i><i class="knob"></i></div>
+<div class="range"><span>Lo $day.outTemp.min.formatted · $day.outTemp.mintime.format("%H:%M")</span><span>Hi $day.outTemp.max.formatted · $day.outTemp.maxtime.format("%H:%M")</span></div>
+</article>
+
+<article class="reading">
+<div class="head"><i class="cap c-mist"></i><h2 class="label c-mist">$obs.label.outHumidity</h2></div>
+<div class="big">$current.outHumidity.formatted<small>$unit.label.outHumidity</small></div>
+<div class="gauge" aria-hidden="true" data-scale="pct" data-unit="percent" data-v="$current.outHumidity.raw" data-lo="$day.outHumidity.min.raw" data-hi="$day.outHumidity.max.raw"><i class="track"></i><i class="fill"></i><i class="band"></i><i class="knob"></i></div>
+<div class="range"><span>Lo $day.outHumidity.min.formatted · $day.outHumidity.mintime.format("%H:%M")</span><span>Hi $day.outHumidity.max.formatted · $day.outHumidity.maxtime.format("%H:%M")</span></div>
+</article>
+
+<article class="reading">
+<div class="head"><i class="cap c-dark"></i><h2 class="label c-dark">$obs.label.windSpeed</h2></div>
+<div class="big">$current.windSpeed.formatted<small>$unit.label.windSpeed.strip() $current.windDir.ordinal_compass</small></div>
+<div class="gauge" aria-hidden="true" data-scale="speed" data-unit="$unit.unit_type.windSpeed" data-v="$current.windSpeed.raw" data-lo="0" data-hi="$day.windGust.max.raw"><i class="track"></i><i class="fill"></i><i class="band"></i><i class="knob"></i></div>
+<div class="range"><span>Avg $day.windSpeed.avg</span><span>Gust $day.windGust.max.formatted · $day.windGust.maxtime.format("%H:%M")</span></div>
+</article>
+
+<article class="reading">
+<div class="head"><i class="cap c-coral"></i><h2 class="label c-coral">$obs.label.rain today</h2></div>
+<div class="big">$day.rain.sum.formatted<small>$unit.label.rain</small></div>
+<div class="gauge" aria-hidden="true" data-scale="rain" data-unit="$unit.unit_type.rain" data-v="$day.rain.sum.raw"><i class="track"></i><i class="fill"></i><i class="band"></i><i class="knob"></i></div>
+<div class="range"><span>Rate $current.rainRate</span><span>Max rate $day.rainRate.max.formatted</span></div>
+</article>
+
+</section>
+
+<section aria-labelledby="h-more">
+<div class="sect"><i class="cap c-dark"></i><h2 class="label c-dark" id="h-more">Additional sensors</h2><i class="fill"></i></div>
+<div class="sensors">
+#set $n = 0
+#for $o in $secondary
+#try
+#set $c = $getattr($current, $o)
+#set $ok = $c.has_data
+#except
+#set $ok = False
+#end try
+#if $ok
+#set $d = $getattr($day, $o)
+<div class="sensor$(' is-hot' if $o == $hot else '')">
+<span class="btn $('c-peach' if $o == $hot else $btns[$n % len($btns)])">$obs.label[$o]</span>
+<i class="wire" aria-hidden="true"></i>
+<span class="val">$c.formatted<small>$getattr($unit.label, $o).strip()</small></span>
+<span class="rng">$d.min.formatted – $d.max.formatted</span>
+</div>
+#set $n = $n + 1
+#end if
+#end for
+#if $day.windrun.has_data
+<div class="sensor">
+<span class="btn $btns[$n % len($btns)]">$obs.label.windrun</span>
+<i class="wire" aria-hidden="true"></i>
+<span class="val">$day.windrun.sum.formatted<small>$unit.label.windrun.strip()</small></span>
+<span class="rng">Today</span>
+</div>
+#end if
+</div>
+</section>
+
+#if $fc_on
+<section aria-labelledby="h-fc">
+<div class="sect"><i class="cap c-peach"></i><h2 class="label c-peach" id="h-fc">Long-range projection</h2><i class="fill"></i><i class="end"></i></div>
+<div class="forecast" data-forecast="full"><p class="empty">Loading forecast</p></div>
+</section>
+#end if
+
+<section aria-labelledby="h-trend">
+<div class="sect"><i class="cap c-mist"></i><h2 class="label c-mist" id="h-trend">Trend bay · last 24 hours</h2><i class="fill"></i></div>
+<div class="charts" data-charts></div>
+</section>
+
+</main>
+#include "inc/frame_close.inc"
+#set global $P = $span(hour_delta=24)
+#set global $agg = None
+#set global $rain_int = 3600
+#set global $hilo = False
+#include "inc/charts.inc"
+#include "inc/config.inc"
+<script src="vendor/apexcharts.min.js" defer></script>
+<script src="lcars.js" defer></script>
+</body>
+</html>
