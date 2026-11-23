@@ -91,6 +91,14 @@ Everything is in `skins/LCARS/skin.conf` under `[Extras]`. Override values in `w
 
 Gauge scales follow your unit system (°F/°C, mph/km/h/m/s/knots, in/mm, inHg/hPa).
 
+### Alert Conditions
+
+The console evaluates active US National Weather Service (NWS) alerts first, followed by today's Open-Meteo forecast, and sets one of three alert states across every page:
+
+- **Red Alert** (`Red alert • <Event>`) — Triggered by an active NWS alert with **Severe** or **Extreme** severity. Displays the red alert banner and shifts page accents to crimson.
+- **Condition Amber** (`Condition amber • ...`) — Triggered by an active NWS alert of lower severity (**Moderate**, **Minor**, or **Unknown**), or—when no NWS alerts are active—when today's forecast meets or exceeds either `amber_precip_probability` (default `80`%) or `amber_gust` (default `40`, in your configured wind speed unit). Displays the peach alert banner and shifts accents to amber.
+- **Nominal** (`All atmospheric sensors nominal`) — Default state when no alerts are active and today's forecast stays below the Condition Amber thresholds (the top alert banner is hidden on standard pages and shown as nominal on the wall display).
+
 ## Mobile & PWA
 
 Narrow screens (`<= 860px`) switch from the left rail to a slim top LCARS elbow bar, a 2-column primary reading grid, compact wire-connected sensor rows, and a bottom navigation dock with an auxiliary drawer (`More`) for all 8 views, quick refresh, and app installation. The wall display (`kiosk.html`) also adapts into a scrollable 3×2 vertical meter console when viewed in phone portrait orientation while keeping the scaled 16:9 stage in landscape.
